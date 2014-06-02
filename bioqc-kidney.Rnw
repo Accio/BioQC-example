@@ -1,14 +1,23 @@
 %\VignetteIndexEntry{BioQC-kidney: The kidney expression example}
-%\VignetteDepends{Biobase}
+%\VignetteDepends{Biobase, RColorBrewer}
 %\VignettePackage{BioQC}
 
-\documentclass[11pt]{article}
+\documentclass[8pt]{article}
 
+\usepackage{amsmath}
+\usepackage{natbib}
+\usepackage{fullpage}
+\usepackage{setspace}
+\usepackage{fancyvrb}
 \usepackage{times}
 \usepackage{hyperref}
 \usepackage{geometry}
 \usepackage{longtable}
 \usepackage[pdftex]{graphicx}
+\usepackage[usenames,dvipsnames]{color}
+\DefineVerbatimEnvironment{code}{Verbatim}{fontsize=\small, xleftmargin=5mm}
+\DefineVerbatimEnvironment{example}{Verbatim}{fontsize=\small}
+
 \SweaveOpts{keep.source=TRUE,eps=FALSE,pdf=TRUE,prefix=TRUE} 
 
 % R part
@@ -19,15 +28,43 @@
 \newcommand{\Rclass}[1]{{\textit{#1}}}
 \newcommand{\Metas}[1]{{\texttt{#1}}}
 
-\begin{document}
-\setkeys{Gin}{width=0.8\textwidth}
-\title{Case study of BioQC: detecting tissue heterogeneity in a kidney expression dataset}
-\author{Jitao David Zhang}
+\hypersetup{
+  colorlinks,
+  citecolor=Violet,
+  linkcolor=Red,
+  urlcolor=Blue
+}
 
-\maketitle
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+\let\endtitlepage\relax
+\setstretch{1.10}
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+
+\textsc{\textsc{Supplementary information for} }\\[2em]
+
+\begin{minipage}{0.8\textwidth}
+\HRule \\[0.4cm]
+\centering \large \bfseries BioQC:  A simple method to detect tissue heterogeneity for quality control of gene expression profiles \\[0.4cm]
+\HRule \\[0.4cm]
+\end{minipage}
+
+\vspace{1em}
+
+\begin{minipage}{0.8\textwidth}
+\centering \href{mailto:jitao_david.zhang@roche.com}{Jitao David Zhang}, Martin Ebeling, Clemens Broger, and \href{laura.badi@roche.com}{Laura Badi} \\
+\vspace{0.25em}
+\centering \today
+\end{minipage}
+
+\end{center}
+\end{titlepage}
 
 \begin{abstract}
-In this vignette we demonstrate the use of \Rpackage{BioQC} with a biological dataset, where mouse kidney samples were profiled for gene expression. Results of BioQC pointed to potential tissue heterogeneity caused by pancreas, which was confirmed by qRT-PCR.
+In this vignette we first demonstrate the use of \Rpackage{BioQC} with a biological dataset, where mouse kidney samples were profiled for gene expression. Results of BioQC pointed to potential tissue heterogeneity caused by pancreas, which was confirmed by qRT-PCR. Further more, we describe data preprocessing and analysis procedures used to generate tissue-specific gene signatures. Finally we discuss the limitation and applicability of the \Rpackage{BioQC} algorithm.
 \end{abstract}
 
 This is a supplementary documentation of \Rpackage{BioQC}, a R/Bioconductor package used to detect tissue heterogeneity from high-throughput gene expression profiling data with tissue-specific gene signatures. For its basic use please refer to the documentation and vignettes shipped along with the package. Here we demonstrate its use with a real biological data set, which is not included in the package distribution due to size limitations.
@@ -48,7 +85,7 @@ load(file)
 print(eset)
 @ 
 
-The profile contains expression of \Sexpr{nrow(eset)} genes in \Sexpr{ncol(eset)} samples. THe expression profile was normalised with RMA normalization. The signals were \Rfunction{log2}-transformed; however, this step does not affect the result of \Rpackage{BioQC} since it uses non-parametric Wilcoxon-Mann-Whitney rank sum test.
+The profile contains expression of \Sexpr{nrow(eset)} genes in \Sexpr{ncol(eset)} samples. The expression profile was normalized with RMA normalization. The signals were \Rfunction{log2}-transformed; however, this step does not affect the result of \Rpackage{BioQC} since it uses non-parametric Wilcoxon-Mann-Whitney rank sum test.
 
 \section{Run BioQC}
 Next we run the core function of the \Rpackage{BioQC} package, \Rfunction{wmwTest}, to perform the analysis.
@@ -62,6 +99,27 @@ The function returns \textit{one-sided} \textit{p}-values of WMW test. We next v
 bioqcResFil <- filterPmat(bioqcRes, 1E-8)
 bioqcAbsLogRes <- absLog10p(bioqcResFil)
 @ 
+
+By closer examination (e.g. using heatmaps such as the one shown in Fig~\ref{heatmap}), we found expression of pancreas and adipose specific genes is significantly enriched in samples 23-25.
+
+<<heatmap, include=FALSE, width=8, height=3.5>>=
+library(RColorBrewer)
+heatmap(bioqcAbsLogRes, Colv=NA, Rowv=TRUE, 
+        cexRow=0.85, margin=c(3,12),
+        col=rev(brewer.pal(7, "RdBu")),
+        labCol=1:ncol(bioqcAbsLogRes))
+@ 
+
+\begin{figure}
+\begin{center}
+<<doHeatmap, fig=TRUE, echo=FALSE>>=
+<<heatmap>>
+@ 
+\end{center}
+\caption{BioQC scores (defined as $abs(log10(p))$) of the samples visualized in heatmap. Red and blue indicate high and low scores, respectively.}
+\label{fig:heatmap}
+\end{figure}
+
 
 <<visBioQC, include=FALSE>>=
 filRes <- bioqcAbsLogRes[c("Kidney_NGS_RNASEQATLAS_0.6_3", 
@@ -80,7 +138,7 @@ matplot(t(filRes), pch=c("K", "P"), type="b", lty=1L,
 \label{fig:BioQCkidney}
 \end{figure}
 
-Visual inspection (Figure~\ref{fig:BioQCkidney}) reveals that there might be sample contanminations in the samples 23-25, potentially by pancreas tissues.
+Visual inspection (Figure~\ref{fig:BioQCkidney}) reveals that there might be sample contaminations in the samples 23-25, potentially by pancreas and/or adipose tissues.
 
 \section{Biological validation}
 To confirm the hypothesis generated by \Rpackage{BioQC}, we performed qRT-PCR experiments to test two pancreas-specific genes' expression in the same set of samples. Note that the two genes (amylase and elastase) are not included in the signature set provided by BioQC.
@@ -108,13 +166,45 @@ text(pancreasScore,elastase, 1:ncol(eset), pos=1)
 \label{fig:rtpcr}
 \end{figure}
 
-The results are shown in Figure~\ref{fig:rtpcr}.It seems likely that sample 23-25 are contaminated by nearby pancreas tissues when the kidney was dissected.
+The results are shown in Figure~\ref{fig:rtpcr}.It seems likely that sample 23-25 are contaminated by nearby pancreas tissues when the kidney was dissected. Potential contamination by adipose tissues remains to be tested.
+
+\section{Data preprocessing of public datasets to generate tissue-specific gene signatures}
+Two microarray datasets (\textit{NB} and \textit{GNF}) were downloaded from the Gene Expression Omnibus database of NCBI. Chips of poor quality were removed. Raw signals were normalised with the MAS5 method.
+
+The GTEx dataset was downloaded from the GTEx database (\url{http://www.broadinstitute.org/gtex/}). Gene expression levels were measured in RPKMs (reads per kilobase per million mapped reads).
+
+In either case, per-tissue gene expression was estimated by averaging replicates of each tissue. Gini indices were calculated from the resulting matrix.
+
 
 %% add discussions: why p-value can be used?
-%\section{Discussion}
+\section{Discussion}
+We developed \Rpackage{BioQC} as a simple method to detect tissue heterogeneity in large-scale gene expression profiling datasets.
+
+BioQC is conceptually related to GSEA~\citep{Subramanian2005} and ssGSEA~\citep{Barbie2009}. Different from GSEA, BioQC can run on single samples since no between-sample statistics is required. BioQC differs from the ssGSEA algorithm in three aspects. First, BioQC applies Wilcoxon-Mann-Whitney tests instead of Kolmogorov-Smirnov tests that are used by ssGSEA, because we are interested in the difference of the location, rather than the shape, between the empirical distribution of signature genes expression and the distribution of background genes expression. At the same time, BioQC comes with a comprehensive list of normal human tissue signatures that can be used 'out of the box'.
+
+BioQC implements Wilcoxon-Mann-Whitney test to generate a score for each tissue and each sample. The statistical test makes strong assumptions about the underlying data, such as (1) independence between the genes, (2) gene expression read-outs from different platforms (such as microarray and NGS) preserves the ranks of the genuine expression level, and (3) tissue contamination leads to consistent increase of tissue signature genes identified from public large-scale expression datasets such as GTex. We are well aware that these assumptions are often violated in reality. However, a recent study found that ssGSEA performed slightly inferior to but fairly comparable with GSVA, a GSEA variant that does not make the same assumption~\citep{Hanzelmann2013}. In clinical settings ssGSEA has also provided interesting insights into molecular mechanisms of diseases~\citep{Verhaak2013}. Therefore, while we notice the theoretical limitations, we believe BioQC can be useful for quality-control purposes, by generating hypotheses and triggering further analysis to identify tissue heterogeneity.
+
+We note that BioQC is not a stringent statistical test for the purpose of hypothesis testing; instead, it provides a simple method, which if used and interpreted properly, can detect potential tissue contamination issues in large-scale expression datasets and provide hints of the source of contamination. This cannot be done by commonly used unsupervised statistical methods such as principal component analysis, since they cannot provide information on what caused the contamination.
+
+Our experience suggests that there are a surprisingly non-trivial proportion of samples in public databases that are potentially contaminated by tissues that are not declared in the meta data. If not taken into consideration, they are likely to distort any downstream analysis results. Therefore, we sincerely hope to see tools such as (and better than) BioQC that are simple to use yet powerful enough to detect tissue contamination in expression profiling data.
 
 \section{Acknowledgment}
 I want to thank Laura Badi, Guido Steiner, Gonzalo Dur\'{a}n Pacheco, and Martin Ebeling for trying out and providing feedbacks to improve the package, Laurent Essioux for discussions, and Silvia Ines Pomposiello for expression and PCR data.
+
+\bibliographystyle{natbib}
+\begin{thebibliography}{}
+
+\bibitem[Barbie {\it et~al}., 2009]{Barbie2009} Barbie D,~\textit{et al.} (2009) Systematic RNA interference reveals that oncogenic KRAS-driven cancers	require TBK1, {\it Nature}, {\bf 462}, 108--112.
+
+\bibitem[Hanzelmann {\it et~al}., 2013]{Hanzelmann2013} Hanzelmann S,~\textit{et al.} (2013) GSVA: gene set variation analysis for microarray and RNA-Seq data, {\it BMC Bioinformatics}, {\bf 14}, 7.
+
+\bibitem[Ma {\it et~al}., 2011]{Ma2011} Ma J,~\textit{et al.} (2011) Appearance frequency modulated gene set enrichment testing, {\it BMC Bioinformatics}, {\bf 12}, 81.
+
+\bibitem[Subramanian {\it et~al}., 2005]{Subramanian2005} Subramanian A,~\textit{et al.} (2005) Gene set enrichment analysis: A knowledge-based approach for interpreting genome-wide expression profiles, {\it PNAS}, {\bf 102}, 15545--15550.
+
+\bibitem[Verhaak {\it et~al}., 2013]{Verhaak2013} Verhaak R,~\textit{et al.} (2013) Prognostically relevant gene signatures of high-grade serous ovarian carcinoma, {\it J Clin Invest}, {\bf 123}, 517--525.
+
+\end{thebibliography}
 
 \section{Session Info}
 The script runs within the following session:
