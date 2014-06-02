@@ -170,7 +170,7 @@ text(pancreasScore,elastase, 1:ncol(eset), pos=1)
 The results are shown in Figure~\ref{fig:rtpcr}.It seems likely that sample 23-25 are contaminated by nearby pancreas tissues when the kidney was dissected. Potential contamination by adipose tissues remains to be tested.
 
 \section{Methods}
-\*subsection{Data preprocessing of public datasets to generate tissue-specific gene signatures}
+\subsection*{Data preprocessing of public datasets to generate tissue-specific gene signatures}
 Two microarray datasets (\textit{NB} and \textit{GNF}) were downloaded from the Gene Expression Omnibus database of NCBI. Chips of poor quality were removed. Raw signals were normalised with the MAS5 method.
 
 The GTEx dataset was downloaded from the GTEx database (\url{http://www.broadinstitute.org/gtex/}). Gene expression levels were measured in RPKMs (reads per kilobase per million mapped reads).
