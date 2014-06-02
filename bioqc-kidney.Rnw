@@ -170,7 +170,7 @@ text(pancreasScore,elastase, 1:ncol(eset), pos=1)
 The results are shown in Figure~\ref{fig:rtpcr}.It seems likely that sample 23-25 are contaminated by nearby pancreas tissues when the kidney was dissected. Potential contamination by adipose tissues remains to be tested.
 
 \section{Methods}
-\subsection{Data preprocessing of public datasets to generate tissue-specific gene signatures}
+\*subsection{Data preprocessing of public datasets to generate tissue-specific gene signatures}
 Two microarray datasets (\textit{NB} and \textit{GNF}) were downloaded from the Gene Expression Omnibus database of NCBI. Chips of poor quality were removed. Raw signals were normalised with the MAS5 method.
 
 The GTEx dataset was downloaded from the GTEx database (\url{http://www.broadinstitute.org/gtex/}). Gene expression levels were measured in RPKMs (reads per kilobase per million mapped reads).
@@ -179,7 +179,7 @@ In either case, per-tissue gene expression was estimated by averaging replicates
 
 
 %% add discussions: why p-value can be used?
-\section{Discussion}
+\section{Discussions}
 We developed \Rpackage{BioQC} as a simple method to detect tissue heterogeneity in large-scale gene expression profiling datasets.
 
 BioQC is conceptually related to GSEA~\citep{Subramanian2005} and ssGSEA~\citep{Barbie2009}. Different from GSEA, BioQC can run on single samples since no between-sample statistics is required. BioQC differs from the ssGSEA algorithm in three aspects. First, BioQC applies Wilcoxon-Mann-Whitney tests instead of Kolmogorov-Smirnov tests that are used by ssGSEA, because we are interested in the difference of the location, rather than the shape, between the empirical distribution of signature genes expression and the distribution of background genes expression. At the same time, BioQC comes with a comprehensive list of normal human tissue signatures that can be used 'out of the box'.
