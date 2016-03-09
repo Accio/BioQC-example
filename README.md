@@ -1,6 +1,6 @@
 # Case studies of BioQC
 
-Contact: [Jitao David Zhang] (mailto:jitao_david.zhang@roche.com)
+Contact: [Jitao David Zhang] (mailto:jitao_david.zhang@roche.com?subject=BioQC-example)
 
 ## Simulation studies
 
