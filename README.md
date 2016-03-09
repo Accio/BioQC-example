@@ -1,4 +1,6 @@
-# BioQC-example
+# Case studies of BioQC
+
+Contact: [Jitao David Zhang] (mailto:jitao_david.zhang@roche.com)
 
 ## Simulation studies
 
@@ -7,3 +9,5 @@
 ## The kidney example
 
 [bioqc-kidney.Rnw] (https://github.com/Accio/BioQC-example/blob/master/bioqc-kidney.Rnw): The BioQC algorithm applied to a real expression profiling dataset
+
+
