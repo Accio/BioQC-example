@@ -48,14 +48,16 @@
 
 \begin{minipage}{0.8\textwidth}
 \HRule \\[0.4cm]
-\centering \large \bfseries BioQC:  A simple method to detect tissue heterogeneity for quality control of gene expression profiles \\[0.4cm]
+\centering \large \bfseries Detect tissue heterogeneity from high-throughput gene expression data with BioQC \\[0.4cm]
 \HRule \\[0.4cm]
 \end{minipage}
 
 \vspace{1em}
 
 \begin{minipage}{0.8\textwidth}
-\centering \href{mailto:jitao_david.zhang@roche.com}{Jitao David Zhang}, Martin Ebeling, Clemens Broger, and \href{laura.badi@roche.com}{Laura Badi} \\
+  \centering \href{mailto:jitao_david.zhang@roche.com}{Jitao David Zhang}, Klas Hatje, Clemens Broger, \\
+Martin Ebeling, and \href{laura.badi@roche.com}{Laura Badi}
+
 \vspace{0.25em}
 \centering \today
 \end{minipage}
@@ -64,10 +66,10 @@
 \end{titlepage}
 
 \begin{abstract}
-In this vignette we first demonstrate the use of \Rpackage{BioQC} with a biological dataset, where mouse kidney samples were profiled for gene expression. Results of BioQC pointed to potential tissue heterogeneity caused by pancreas, which was confirmed by qRT-PCR. Furthermore, we describe data preprocessing and analysis procedures used to generate tissue-specific gene signatures. Finally we discuss the limitation and applicability of the \Rpackage{BioQC} algorithm. Both the source code and the data to produce this document can be found at \url{https://github.com/Accio/BioQC-example}.
+In this vignette, we first demonstrate the use of \Rpackage{BioQC} with a biological dataset, where mouse kidney samples were profiled for gene expression. Results of BioQC pointed to potential tissue heterogeneity caused by pancreas, which was confirmed by qRT-PCR. Furthermore, we describe data preprocessing and analysis procedures used to generate tissue-specific gene signatures. Finally we discuss the applicability of the \Rpackage{BioQC} algorithm. Both the source code and the data to produce this document can be found at \url{https://github.com/Accio/BioQC-example}.
 \end{abstract}
 
-This is a supplementary documentation of \Rpackage{BioQC}, a R/Bioconductor package used to detect tissue heterogeneity from high-throughput gene expression profiling data with tissue-specific gene signatures. For its basic use please refer to the documentation and vignettes shipped along with the package. Here we demonstrate its use with a real biological data set, which is not included in the package distribution due to size limitations.
+This is a supplementary documentation of \Rpackage{BioQC}, a R/Bioconductor package used to detect tissue heterogeneity from high-throughput gene expression profiling data with tissue-specific gene signatures. For its basic use please refer to the documentation and vignettes shipped along with the package, or to the other vignette \textit{bioqc-simulation.Rnw} which applies the algorithm to simulated datsets. Here we demonstrate its use with a real biological data set, which is not included in the package distribution due to size limitations.
 
 \section{Case study with a kidney expression profiling dataset}
 \subsection{Data read in}
