@@ -172,6 +172,18 @@ print(expect_equal(bioqcNumRes, rNumRes))
 
 The \Rpackage{BioQC} implementation is more than 500 times much faster (Figure~\ref{fig:timeBenchmark}): while it takes about one second for BioQC to calculate enrichment scores of all \Sexpr{length(gmt)} signatures in 100 samples, the native R implementation about 20 minutes.
 
+<<trellisPrepare, echo=FALSE>>=
+op <- list(layout.widths = list(left.padding = 0, key.ylab.padding = 0.5, 
+               ylab.axis.padding = 0.5, axis.right = 0.5, right.padding = 0),
+           layout.heights = list(top.padding = 0, bottom.padding = 0, 
+               axis.top = 0, main.key.padding = 0.5, key.axis.padding = 0.5),
+           axis.text=list(cex=1.2),
+           par.xlab.text=list(cex=1.4),
+           par.sub.text=list(cex=1.4),
+           add.text=list(cex=1.4),
+           par.ylab.text=list(cex=1.4))
+@ 
+
 \begin{figure}[\textwidth]
 \begin{center}
 <<timeBenchmarkVis, echo=FALSE, fig=TRUE, width=8, height=4>>=
@@ -183,7 +195,9 @@ timeRes <- data.frame(NoSample=noSamples,
                       Method=rep(c("BioQC", "NativeR"), each=length(noSamples)))
 timeXY <- xyplot(Time ~ NoSample, group=Method, data=timeRes,  type="b",
                  auto.key=list(columns=2L),
-                 xlab="Number of samples", ylab="Time [s]",
+                 xlab="Number of samples", ylab="Time [s]", 
+                 par.settings=list(superpose.symbol=list(cex=1.25, pch=16, col=c("black", "red")),
+                                   superpose.line=list(col=c("black", "red"))),
                  scales=list(tck=c(1,0), alternating=1L, 
                      x=list(at=noSamples),
                      y=list(log=2, at=10^c(-2, -1, 0,1,2,3, log10(2000)), labels=c(0.01, 0.1, 1, 10,100,1000, 2000))))
@@ -201,6 +215,7 @@ timeFactorBar <- barchart(timeFactor ~ noSamples, horizontal=FALSE,
                           scales=list(tck=c(1, 0), alternating=1L,
                               y=list(at=seq(0,timeFactor.yCeiling, by=500)),
                               x=list(at=seq(along=timeFactor), labels=noSamples)))
+trellis.par.set(op)
 print(timeXY, c(0, 0, 0.5, 1), more=TRUE)
 print(timeFactorBar, c(0.5, 0, 1, 1), more=FALSE)
 ## print(timeXY)
@@ -254,30 +269,32 @@ senseRank <- apply(senseBioQC, 2, function(x) rank(x)[selGeneSet])
 mydot <- function(x,y,abline=1,...) {panel.abline(h=abline, col="darkgray");panel.dotplot(x,y,...)}
 senseBW <- bwplot(-log10(senseBioQC[selGeneSet,])~senseAmplitudes, horizontal=FALSE,
                   pch="|", do.out=FALSE,
+                  par.settings=list(box.rectangle=list(col="black", fill="#ccddee")),
                   scales=list(tck=c(1,0), alternating=1L,
                       x=list(at=seq(along=unique(senseAmplitudes)), labels=unique(senseAmplitudes))),
                   ylab="BioQC enrichment score [-log10(p)]", xlab="Mean expression difference")
 senseDot <- dotplot(-log10(senseBioQC[selGeneSet,])~senseAmplitudes, horizontal=FALSE,
-                    cex=0.7, 
+                    cex=0.9, 
                     panel=mydot, abline=0,
                     scales=list(tck=c(1,0), alternating=1L, 
                         x=list(at=seq(along=unique(senseAmplitudes)), labels=unique(senseAmplitudes))))
 
 senseRankBW <- bwplot(senseRank~senseAmplitudes, horizontal=FALSE,
                       pch="|", do.out=FALSE, col="black", ylim=c(155, -5),
-                      par.settings=list(box.rectangle=list(col="black")),
+                      par.settings=list(box.rectangle=list(col="black", fill="#d9dddd")),
                       scales=list(tck=c(1,0), alternating=1L,
                           y=list(at=c(1,50,100,150)),
                           x=list(at=seq(along=unique(senseAmplitudes)), labels=unique(senseAmplitudes))),
                       ylab="Rank", xlab="Mean expression difference")
 senseRankDot <- dotplot(senseRank~senseAmplitudes, horizontal=FALSE,
                         panel=mydot, abline=1,
-                        cex=0.7, col="black",ylim=c(155, -5),
+                        cex=0.9, col="black",ylim=c(155, -5),
                         scales=list(tck=c(1,0), alternating=1L, 
                             x=list(at=seq(along=unique(senseAmplitudes)), labels=unique(senseAmplitudes))))
 
 sensePlot <- senseBW + senseDot
 senseRankPlot <- senseRankBW + senseRankDot
+trellis.par.set(op)
 print(sensePlot, pos=c(0, 0, 0.5, 1), more=TRUE)
 print(senseRankPlot, pos=c(0.5, 0, 1, 1), more=FALSE)
 @ 
@@ -378,6 +395,7 @@ colnames(hjMixSubEnrich) <- colnames(hjMixSubRank) <- mixPropsLabels
 <<hjMixVis, echo=FALSE, fig=TRUE, width=8, height=4>>=
 mixPropsShow <- seq(0, 1, 0.25)
 mixPropsShowLabels <- sprintf("%d%%", mixPropsShow*100)
+hjCols <- c("lightblue", "orange")
 hjMixData <- data.frame(Tissue=rep(c("Muscle_cardiac", "Intestine_small"), ncol(hjMixSubEnrich)),
                         Prop=rep(mixProps, each=nrow(hjMixSubEnrich)),
                         EnrichScore=as.vector(hjMixSubEnrich))
@@ -386,15 +404,20 @@ hjMixDataRank <- data.frame(Tissue=rep(c( "Muscle_cardiac","Intestine_small"), n
                             EnrichScore=as.vector(hjMixSubRank))
 hjMixXY <- xyplot(EnrichScore ~ Prop, group=Tissue, data=hjMixData, type="b",
                   xlab="Proportion of jejunum", ylab="Enrichment score",
-                  auto.key=list(columns=2L), abline=list(h=5, col="lightgray", lty=2, lwd=2),
+                  par.settings=list(superpose.symbol=list(cex=1.25, pch=16, col=hjCols),
+                      superpose.line=list(col=hjCols)),
+                  auto.key=list(columns=1L), abline=list(h=5, col="lightgray", lty=2, lwd=2),
                   scales=list(tck=c(1,0), alternating=1L, 
                       x=list(at=mixPropsShow, labels=mixPropsShowLabels)))
 hjMixRankXY <- xyplot(EnrichScore ~ Prop, group=Tissue, data=hjMixDataRank, type="b",
                       xlab="Proportion of jejunum", ylab="Enrichment score", ylim=c(155, -5),
-                      auto.key=list(columns=2L),
+                      auto.key=list(columns=1L),
+                      par.settings=list(superpose.symbol=list(cex=1.25, pch=16, col=hjCols),
+                          superpose.line=list(col=hjCols)),
                       scales=list(tck=c(1,0), alternating=1L, 
                           x=list(at=mixPropsShow, labels=mixPropsShowLabels),
                           y=list(at=c(1,10,50,100,150))))
+trellis.par.set(op)
 print(hjMixXY, pos=c(0,0,0.5,1), more=TRUE)
 print(hjMixRankXY, pos=c(0.5,0,1,1), more=FALSE)
 @ 
