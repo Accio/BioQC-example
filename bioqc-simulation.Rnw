@@ -99,6 +99,8 @@ library(xtable)
 library(gplots)
 library(rbenchmark)
 
+pdf.options(family="ArialMT", useDingbats=FALSE)
+
 set.seed(1887)
 
 ## list human genes
@@ -279,7 +281,7 @@ senseBW <- bwplot(-log10(senseBioQC[selGeneSet,])~senseAmplitudes, horizontal=FA
                   par.settings=list(box.rectangle=list(col="black", fill="#ccddee")),
                   scales=list(tck=c(1,0), alternating=1L,
                       x=list(at=seq(along=unique(senseAmplitudes)), labels=unique(senseAmplitudes))),
-                  ylab="BioQC enrichment score [-log10(p)]", xlab="Mean expression difference")
+                  ylab="Enrichment score", xlab="Mean expression difference")
 senseDot <- dotplot(-log10(senseBioQC[selGeneSet,])~senseAmplitudes, horizontal=FALSE,
                     cex=0.9, 
                     panel=mydot, abline=0,
@@ -292,7 +294,7 @@ senseRankBW <- bwplot(senseRank~senseAmplitudes, horizontal=FALSE,
                       scales=list(tck=c(1,0), alternating=1L,
                           y=list(at=c(1,50,100,150)),
                           x=list(at=seq(along=unique(senseAmplitudes)), labels=unique(senseAmplitudes))),
-                      ylab="Rank", xlab="Mean expression difference")
+                      ylab="Enrichment score rank", xlab="Mean expression difference")
 senseRankDot <- dotplot(senseRank~senseAmplitudes, horizontal=FALSE,
                         panel=mydot, abline=1,
                         cex=0.9, col="black",ylim=c(155, -5),
@@ -535,9 +537,9 @@ The average detection limits of tissues as contamination sources are listed in T
  \begin{center}
 <<detectLimit, echo=FALSE, results=tex>>=
 meanThr <- colMeans(comProp, na.rm=TRUE)
-meanThrShow <- data.frame(Tissue=names(meanThr), sprintf("%1.2f%%", meanThr*100))
+meanThrShow <- data.frame(Tissue=names(meanThr), MedianDetectionLimit=sprintf("%1.2f%%", meanThr*100))
 meanThrTbl <- xtable(meanThrShow,
-                     caption="Average lower detection limites of tissues as contamination sources",
+                     caption="Median lower detection limites of tissues as contamination sources.",
                      label="tbl:detectLimit")
 print(meanThrTbl, floating=FALSE, tabular.environment="longtable")
 @ 
