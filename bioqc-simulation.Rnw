@@ -51,7 +51,7 @@
 
 \begin{minipage}{0.8\textwidth}
 \HRule \\[0.4cm]
-\centering \large \bfseries Detect tissue heterogeneity from high-throughput gene expression data with BioQC \\[0.4cm]
+\centering \large \bfseries Detect tissue heterogeneity from high-throughput gene expression profiling data with BioQC \\[0.4cm]
 \HRule \\[0.4cm]
 \end{minipage}
 
@@ -545,9 +545,61 @@ print(meanThrTbl, floating=FALSE, tabular.environment="longtable")
 @ 
 \end{center}
 
-Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). We suspect this is due to the fact that many genes that are specifically expressed in brain are present at relative low levels; therefore although the prefrontal cortex signatures could correctly predict the brain sample in the quality control (Table~\ref{tbl:dogTissue}), they are less powerful detecting brain-causing contaminations. It remains to be tested whether this phenomenon is observed in other datasets and in species other than dog.
+Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs \textit{et al.} profiled the whole cerebrum, whereas in \Rpackage{BioQC} there are \Sexpr{length(grep("Brain", names(gmt), ignore.case=TRUE))} distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes (Figure~\ref{fig:brain}). Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets.
 
-Otherwise, most \textit{in silico} contamination events are detectable in this dataset, with median detection limit around \Sexpr{median(comProp, na.rm=TRUE)}. This suggests that \Rpackage{BioQC} works well in physiological settings.
+\begin{figure}
+  \begin{center}
+<<brainLowExprs, echo=FALSE, fig=TRUE, width=6, height=4>>=
+dogAvgGs <- c("Brain_Cortex_prefrontal_NR_0.7_3",
+              "Muscle_cardiac_NR_0.7_3",
+              "Intestine_small_NR_0.7_3",
+              "Kidney_NR_0.7_3",
+              "Liver_NR_0.7_3",
+              "Lung_NR_0.7_3",
+              "Lymphocyte_B_FOLL_NR_0.7_3",
+              "Pancreas_Islets_NR_0.7_3",
+              "Muscle_skeletal_NR_0.7_3",
+              "Monocytes_NR_0.7_3")
+dogAvgGsGenes <- sapply(gmt[dogAvgGs], function(x) x$genes)
+dogAvgGsGeneInds <- lapply(dogAvgGsGenes, function(x) {
+                               inds <- match(x, fData(dog)$GeneSymbol)
+                               inds[!is.na(inds)]
+                               })
+
+## boxplot of tissue-specific genes
+dogAvgGsRel <- sapply(seq(along=dogAvgGsGeneInds), function(i) {
+                          ind <- dogAvgGsGeneInds[[i]]
+                          bgInd <- setdiff(1:nrow(dog), ind)
+                          apply(dogAvgMat, 2, function(x) median(x[ind]/median(x[bgInd])))
+                      })
+colnames(dogAvgGsRel) <- colnames(dogAvgMat)
+##heatmap.2(log2(dogAvgGsRel),zlim=c(-1,1),
+##          cellnote=round(dogAvgGsRel,1),
+##          Rowv=NA, Colv=NA, dendrogram="none",  col=greenred,
+##          lwid=c(1,3), lhei=c(1,3),  
+##          key.title="Enrichment score", key.xlab="Detection limit", 
+##          xlab="Tissue signature", ylab="Tissue profiles", 
+##          key.par=list(cex.lab=1.25, mar=c(4,2,1,0), mgp=c(1.5,0.5,0)),
+##          cexRow=1.25, margins=c(8,8), trace="none", offsetRow=0, offsetCol=0,
+##          density.info="none",na.col="gray", breaks=seq(-1,1,0.01), symbreaks=TRUE)
+
+op <- par(mar=c(8,4,1,1))
+barplot(sort(diag(dogAvgGsRel)), las=3, ylab="Median ratio of expression (signature/background)")
+abline(h=1.25)
+## op <- par(mar=c(8,4,1,1))
+## dogAvgES <- absLog10p(diag(wmwTest(dogAvgMat, dogAvgGsGeneInds, alternative="greater")))
+## names(dogAvgES) <- colnames(dogAvgMat)
+## barplot(sort(dogAvgES, decreasing=TRUE), las=3, ylab="ES in respective average tissue profile")
+## par(op)
+## plot(meanThr, dogAvgES, type="n", xlab="Average lower detection limit", ylab="BioQC ES score")
+## text(meanThr, dogAvgES, colnames(dogAvgMat))
+@ 
+\end{center}
+\caption{Tissue-specific genes' expression in respective average tissue profiles. For each tissue (\textit{e.g.} brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest.}
+\label{fig:brain}
+\end{figure}
+
+Otherwise, most \textit{in silico} contamination events are detectable in this dataset, with median detection limit around \Sexpr{median(comProp, na.rm=TRUE)}. This suggests that \Rpackage{BioQC} is sensitive towards tissue heterogeneity in physiological settings.
 
 \section{Conclusions}
 Benchmark studies with similated and real-world data demonstrate that \Rpackage{BioQC}~is a efficient and sensitive method to detect tissue heterogeneity from high-throughput gene expression data.

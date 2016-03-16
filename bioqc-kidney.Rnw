@@ -48,7 +48,7 @@
 
 \begin{minipage}{0.8\textwidth}
 \HRule \\[0.4cm]
-\centering \large \bfseries Detect tissue heterogeneity from high-throughput gene expression data with BioQC \\[0.4cm]
+\centering \large \bfseries Detect tissue heterogeneity from high-throughput gene expression profiling data with BioQC \\[0.4cm]
 \HRule \\[0.4cm]
 \end{minipage}
 
