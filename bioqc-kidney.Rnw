@@ -70,7 +70,7 @@ In this vignette, we demonstrate the use of \Rpackage{BioQC} with a case study w
 
 This is a supplementary documentation of \Rpackage{BioQC}, a R/Bioconductor package used to detect tissue heterogeneity from high-throughput gene expression profiling data with tissue-specific gene signatures. For its basic use please refer to the documentation and vignettes shipped along with the package, or to the other vignette \textit{bioqc-simulation.Rnw} which applies the algorithm to simulated datsets. Here we demonstrate its use with a real biological data set, which is not included in the package distribution due to size limitations.
 
-\section{Importing data}
+\section{Importing the data}
 
 First we load the package, the tissue-specific gene signatures, and the expression data into the R session. 
 
@@ -170,11 +170,12 @@ text(pancreasScore,elastase, 1:ncol(eset), pos=1)
 The results are shown in Figure~\ref{fig:rtpcr}. It seems likely that sample 23-25 are contaminated by nearby pancreas tissues when the kidney was dissected. Potential contamination by adipose tissues remains to be tested.
 
 \section{Impact of sample removal on differential gene expression analysis}
-In this study, four mice of the \textit{FVB/NJ} strain received nephrectomy operation and treatment of Losartan, an angiotensin II receptor antagonist drug, and four mice reveiced an sham operation and Losartan. Among the Nephrectomy+Losartan group, one sample (index 24) is possibly contaminated by pancreas. Suppose now we are interested in the differential gene expression between the conditions. We now run the analysis twice, once with and once without the contaminated sample, to study the impact of removing heterogenous samples detected by \Rpackage{BioQC}.
+In this study, four mice of the \textit{FVB/NJ} strain received nephrectomy operation and treatment of Losartan, an angiotensin II receptor antagonist drug, and four mice reveiced an sham operation and Losartan. Within the Nephrectomy+Losartan group, one sample (index 24) is possibly contaminated by pancreas. Suppose now we are interested in the differential gene expression between the conditions. We now run the analysis twice, once with and once without the contaminated sample, to study the impact of removing heterogenous samples detected by \Rpackage{BioQC}.
 
 <<deg, include=FALSE>>=
 library(limma)
-isNeph <- with(pData(eset), Strain=="FVB/NJ" & TREATMENTNAME %in% c("Nephrectomy-Losartan", "Sham-Losartan"))
+isNeph <- with(pData(eset), Strain=="FVB/NJ" &
+               TREATMENTNAME %in% c("Nephrectomy-Losartan", "Sham-Losartan"))
 isContam <- with(pData(eset), INDIVIDUALNAME %in% c("BN7", "FNL8", "FN6"))
 esetNephContam <- eset[,isNeph]
 esetNephExclContam <- eset[, isNeph & !isContam]
@@ -195,8 +196,8 @@ esetNephContam.topTable <- getDEG(esetNephContam)
 esetNephExclContam.topTable <- getDEG(esetNephExclContam)
 esetFeats <- featureNames(eset)
 esetNephTbl <- data.frame(feature=esetFeats,
-                          GeneSymbol=esetNephContam.topTable[esetFeats,]$GeneSymbol,
                           OrigGeneSymbol=esetNephContam.topTable[esetFeats,]$OrigGeneSymbol,
+                          GeneSymbol=esetNephContam.topTable[esetFeats,]$GeneSymbol,
                           Contam.logFC=esetNephContam.topTable[esetFeats,]$logFC,
                           ExclContam.logFC=esetNephExclContam.topTable[esetFeats,]$logFC)
 par(mfrow=c(1,1), mar=c(3,3,1,1)+0.5, mgp=c(2,1,0))
@@ -208,14 +209,20 @@ isDiff <- with(esetNephTbl, abs(Contam.logFC-ExclContam.logFC)>=2)
 with(esetNephTbl, points(Contam.logFC[isDiff]~ExclContam.logFC[isDiff], pch=16, col="red"))
 diffTable <- esetNephTbl[isDiff,]
 diffGenes <- unique(diffTable[,"GeneSymbol"])
-diffGenesPancreas <- diffGenes %in% gmt[["Pancreas_Islets_NR_0.7_3"]]$genes
+pancreasSignature <- gmt[["Pancreas_Islets_NR_0.7_3"]]$genes
+diffGenesPancreas <- diffGenes %in% pancreasSignature
+diffTable$isPancreasSignature <- diffTable$GeneSymbol %in% pancreasSignature
+colnames(diffTable) <- c("Probeset", "GeneSymbol", "Human ortholog", 
+                         "Log2FC", "Log2FC (excl. contam.)", 
+                         "IsPancreasSignature")
+diffTable <- diffTable[order(diffTable$Log2FC, decreasing=TRUE),]
 @ 
 
-We found that \Sexpr{nrow(diffTable)} probesets mapped to \Sexpr{length(diffGenes)} are associated with very strong expression changes if the contaminated sample is not excluded (Table~\ref{tbl:diffTbl}). Not surprisingly \Sexpr{sum(diffGenesPancreas)} genes among them are highly enriched in pancreas but not kidney and belong to the pancreas signature used by \Rpackage {BioQC}.
+We found that \Sexpr{nrow(diffTable)} probesets representing \Sexpr{length(diffGenes)} genes are associated with much stronger expression changes if the contaminated sample is not excluded (Table~\ref{tbl:diffTbl}). Not surprisingly almost all of these genes are highly expressed in normal human pancreas tissues, and \Sexpr{sum(diffGenesPancreas)} genes belong to the pancreas signature used by \Rpackage {BioQC}.
 
 \begin{figure}
 \begin{center}
-<<doDeg, fig=TRUE, echo=FALSE, width=8, height=4>>=
+<<doDeg, fig=TRUE, echo=FALSE, width=6, height=6>>=
 <<deg>>
 @ 
 \end{center}
@@ -226,7 +233,7 @@ We found that \Sexpr{nrow(diffTable)} probesets mapped to \Sexpr{length(diffGene
 \begin{table}
 <<diffTbl, results=tex, echo=FALSE>>=
 library(xtable)
-diffXtable <- xtable(diffTable)
+diffXtable <- xtable(diffTable, digits=rep(2, ncol(diffTable)+1))
 print(diffXtable, floating=FALSE, include.rownames=FALSE)
 @ 
 \label{tbl:diffTbl}
