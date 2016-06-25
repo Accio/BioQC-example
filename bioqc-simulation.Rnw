@@ -49,7 +49,7 @@
 
 \textsc{\textsc{Supplementary information for} }\\[2em]
 
-\begin{minipage}{0.8\textwidth}
+\begin{minipage}{0.9\textwidth}
 \HRule \\[0.4cm]
 \centering \large \bfseries Detect tissue heterogeneity from high-throughput gene expression profiling data with BioQC \\[0.4cm]
 \HRule \\[0.4cm]
@@ -57,7 +57,7 @@
 
 \vspace{1em}
 
-\begin{minipage}{0.8\textwidth}
+\begin{minipage}{0.9\textwidth}
 \centering \href{mailto:jitao_david.zhang@roche.com}{Jitao David Zhang}, Klas Hatje, Clemens Broger,\\
 Martin Ebeling, and \href{laura.badi@roche.com}{Laura Badi} \\
 \vspace{0.25em}
@@ -176,7 +176,7 @@ bioqcNumRes <- lapply(bioqcRes, getWmwTestRes)
 The numeric results of both implementations, \textit{bioqcNumRes} (from BioQC) and \textit{rNumRes} (from R), are equivalent, as shown by the next command.
 
 <<timeBenchmarkIdentical>>=
-print(expect_equal(bioqcNumRes, rNumRes))
+expect_equal(bioqcNumRes, rNumRes)
 @ 
 
 The \Rpackage{BioQC} implementation is more than 500 times much faster (Figure~\ref{fig:timeBenchmark}): while it takes about one second for BioQC to calculate enrichment scores of all \Sexpr{length(gmt)} signatures in 100 samples, the native R implementation about 20 minutes.
