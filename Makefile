@@ -1,17 +1,10 @@
 R=R
 
-all:bioqc-kidney.pdf bioqc-simulation.pdf
+all:bioqc-kidney.html bioqc-simulation.html
 
-bioqc-simulation.pdf:bioqc-simulation.tex
-	pdflatex bioqc-simulation.tex
-	pdflatex bioqc-simulation.tex
+bioqc-simulation.html:bioqc-simulation.Rmd
+	 Rscript -e "rmarkdown::render('bioqc-simulation.Rmd')"
 
-bioqc-simulation.tex:bioqc-simulation.Rnw
-	${R} CMD Sweave bioqc-simulation.Rnw
+bioqc-kidney.html:bioqc-kidney.Rmd
+	Rscript -e "rmarkdown::render('bioqc-kidney.Rmd')"
 
-bioqc-kidney.pdf:bioqc-kidney.tex
-	pdflatex bioqc-kidney.tex
-	pdflatex bioqc-kidney.tex
-
-bioqc-kidney.tex:bioqc-kidney.Rnw
-	${R} CMD Sweave bioqc-kidney.Rnw
