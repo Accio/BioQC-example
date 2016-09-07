@@ -65,7 +65,7 @@ system.time(bioqcRes <- wmwTest(eset, gmt,
 
 ```
 ##    user  system elapsed 
-##   2.581   0.011   2.591
+##   1.497   0.012   1.509
 ```
 
 The function returns *one-sided* $p$-values of Wilcoxon-Mann-Whitney test. We next visualize this metric after transformation.
@@ -145,16 +145,6 @@ In this study, four mice of the *FVB/NJ* strain received nephrectomy operation a
 library(limma)
 ```
 
-```
-## 
-## Attaching package: 'limma'
-```
-
-```
-## The following object is masked from 'package:BiocGenerics':
-## 
-##     plotMA
-```
 
 ```r
 isNeph <- with(pData(eset), Strain=="FVB/NJ" &
@@ -173,7 +163,7 @@ getDEG <- function(eset) {
   fit <- eBayes(fit)
   tt <- topTable(fit, n=nrow(eset))
   return(tt)
-  }
+}
 
 esetNephContam.topTable <- getDEG(esetNephContam)
 esetNephExclContam.topTable <- getDEG(esetNephExclContam)
@@ -209,35 +199,11 @@ colnames(diffTable) <- c("Probeset", "GeneSymbol", "Human ortholog",
 diffTable <- diffTable[order(diffTable$Log2FC, decreasing=TRUE),]
 ```
 
+We found that 22 probesets representing 17 genes are associated with much stronger expression changes if the contaminated sample is not excluded (table below). Not surprisingly almost all of these genes are highly expressed in normal human pancreas tissues, and 13 genes belong to the pancreas signature used by *BioQC*. 
 
-```r
-kable(diffTable)
-```
 
-        Probeset       GeneSymbol      Human ortholog      Log2FC   Log2FC (excl. contam.)  IsPancreasSignature 
-------  -------------  --------------  ---------------  ---------  -----------------------  --------------------
-25057   1448220_at     Ctrb1           CTRB1             5.817653                3.5284102  FALSE               
-5482    1421868_a_at   Pnlip           PNLIP             5.051147                3.0174169  TRUE                
-5950    1422434_a_at   2210010C04Rik   PRSS1             4.500541                2.2296704  TRUE                
-1535    1417257_at     Cel             CEL               4.155542                1.7218589  TRUE                
-11139   1428102_at     Cpb1            CPB1              3.954922                1.6481113  TRUE                
-19074   1438612_a_at   Clps            CLPS              3.883912                1.2113281  TRUE                
-2524    1418287_a_at   Dmbt1           DMBT1             3.341598                0.8540661  FALSE               
-5951    1422435_at     2210010C04Rik   PRSS1             3.234363                0.9336559  TRUE                
-14472   1433431_at     Pnlip           PNLIP             3.205622                1.1667647  TRUE                
-11099   1428062_at     Cpa1            CPA1              2.908076                0.3972920  TRUE                
-447     1416139_at     Reg2            REG1B             2.816847                0.4859770  TRUE                
-27758   1451228_a_at   Sycn            SYCN              2.665761                0.2137231  FALSE               
-224     1415905_at     Reg1            REG1A             2.456353               -0.2443787  TRUE                
-11388   1428359_s_at   Zg16            ZG16              2.378498                0.1023866  FALSE               
-30313   1454623_at     Cpa2            CPA2              2.315604                0.0287225  TRUE                
-18092   1437438_x_at   Pnliprp2        PNLIPRP2          2.301404               -0.2611595  TRUE                
-17709   1437015_x_at   Pla2g1b         PLA2G1B           2.138842                0.0071131  TRUE                
-25025   1448186_at     Pnliprp2        PNLIPRP2          2.025400               -0.3735894  TRUE                
-135     1415805_at     Clps            CLPS              1.867521               -0.1544509  TRUE                
-202     1415883_a_at   Cela3b          CELA3B            1.608051               -0.6768422  TRUE                
-1685    1417413_at     Cuzd1           CUZD1             1.391920               -0.9892661  TRUE                
-11387   1428358_at     Zg16            ZG16              1.202679               -1.1022555  FALSE               
+
+In summary, we observe that tissue heterogeneity can impact down-stream analysis results and negatively affect reproducibility of gene expression data if it remains overlooked. It underlines again the value of applying *BioQC* as a first-line quality control tool.
 
 
 

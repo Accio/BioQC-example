@@ -104,10 +104,12 @@ Impact of sample removal on differential gene expression analysis
 -----------------------------------------------------------------
 In this study, four mice of the *FVB/NJ* strain received nephrectomy operation and treatment of Losartan, an angiotensin II receptor antagonist drug, and four mice reveiced an sham operation and Losartan. Within the Nephrectomy+Losartan group, one sample (index 24) is possibly contaminated by pancreas. Suppose now we are interested in the differential gene expression between the conditions. We now run the analysis twice, once with and once without the contaminated sample, to study the impact of removing heterogenous samples detected by *BioQC*.
 
-We found that `r nrow(diffTable)` probesets representing `r length(diffGenes)` genes are associated with much stronger expression changes if the contaminated sample is not excluded (table below). Not surprisingly almost all of these genes are highly expressed in normal human pancreas tissues, and `r sum(diffGenesPancreas)` genes belong to the pancreas signature used by *BioQC*. 
+```{r load_limma, warning=FALSE, message=FALSE, results="hide"}
+library(limma)
+```
 
 ```{r deg, fig.width=5, fig.height=5, dev='svg', fig.cap="Log2 fold change (logFC) values reported by *limma* with one contaminated sample included (y-axis) or excluded (x-axis). Genes strongly affected by the contamination are indicated by red dots."}
-library(limma)
+
 isNeph <- with(pData(eset), Strain=="FVB/NJ" &
                  TREATMENTNAME %in% c("Nephrectomy-Losartan", "Sham-Losartan"))
 isContam <- with(pData(eset), INDIVIDUALNAME %in% c("BN7", "FNL8", "FN6"))
@@ -152,7 +154,9 @@ colnames(diffTable) <- c("Probeset", "GeneSymbol", "Human ortholog",
 diffTable <- diffTable[order(diffTable$Log2FC, decreasing=TRUE),]
 ```
 
-```{r kable_deg}
+We found that `r nrow(diffTable)` probesets representing `r length(diffGenes)` genes are associated with much stronger expression changes if the contaminated sample is not excluded (table below). Not surprisingly almost all of these genes are highly expressed in normal human pancreas tissues, and `r sum(diffGenesPancreas)` genes belong to the pancreas signature used by *BioQC*. 
+
+```{r kable_deg, include=FALSE}
 kable(diffTable, caption="Genes that are identified as strongly changed ony if the contaminated sample is included.")
 ```
 
