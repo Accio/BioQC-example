@@ -13,7 +13,7 @@ library(knitr)
 opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="center")
 ```
 
-In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code to produce this document can be found in the github repository[BioQC-example](https://github.com/Accio/BioQC-example).
+In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
 *BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an      efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
 
@@ -26,3 +26,160 @@ In this document, we perform three simulation studies with *BioQC*:
 * **Sensitivity benchmark** tests the sensitivity and specificity of *BioQC* detecting tissue heterogeneity using model-generated simulated data;
 * **Mixing benchmark** tests the sensitivity and specificity of *BioQC* using simulated contamination with real-world data.
 
+All source code that is needed to reproduce the results can be found in the `.Rmd` file generating this document. 
+
+```{r lib, warning=FALSE, message=FALSE, results="hide"}
+library(testthat)
+library(BioQC)
+library(hgu133plus2.db) ## to simulate an microarray expression dataset
+library(lattice)
+library(latticeExtra)
+library(GEOquery)
+library(xtable)
+library(gplots)
+library(rbenchmark)
+
+pdf.options(family="ArialMT", useDingbats=FALSE)
+
+set.seed(1887)
+
+## list human genes
+humanGenes <- unique(na.omit(unlist(as.list(hgu133plus2SYMBOL))))
+
+## read tissue-specific gene signatures
+gmtFile <- system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt",
+                       package="BioQC")
+gmt <- readGmt(gmtFile)
+```
+
+
+Time benchmark
+--------------
+In the first experiment, we setup expression matrices of `r length(humanGenes)` human protein-coding genes of 1, 5, 10, 50, or 100 samples. Genes  are $i.i.d$ distributed following $\mathcal{N}(0,1)$. The Wilcoxon-Mann-Whitney test implemented in *BioQC* and the native *R* implementation are applied to the matrices respectively.
+
+
+```{r time_benchmark, cache=TRUE, echo=FALSE}
+randomMatrix <- function(rows=humanGenes, ncol=5) {
+  nrow <- length(rows)
+  mat <- matrix(rnorm(nrow*ncol),
+                nrow=nrow, byrow=TRUE)
+  rownames(mat) <- rows
+  return(mat)
+}
+noSamples <- c(1, 5, 10, 20, 50, 100)
+noBenchRep <- 100
+tmRandomMats <- lapply(noSamples, function(x) randomMatrix(ncol=x))
+tissueInds <- sapply(gmt, function(x) match(x$genes, humanGenes))
+
+wmwTestR <- function(matrix, indices, alternative) {
+  res <- apply(matrix, 2, function(x) {
+    sapply(indices, function(index) {
+      sub <- rep(FALSE, length(x))
+      sub[index] <- TRUE
+      wt <- wilcox.test(x[sub], x[!sub],
+                        alternative=alternative,
+                        exact=FALSE)
+      return(wt$p.value)
+      })
+    })
+  return(res)
+  }
+
+## WARNING: very slow (~1-2 hours)
+benchmarkFile <- "simluation-benchmark.RData"
+if(!file.exists(benchmarkFile)) {
+  bioqcRes <- lapply(tmRandomMats, function(mat) {
+    bench <- benchmark(wmwTestRes<- wmwTest(mat,
+                                            tissueInds,
+                                            alternative="greater"),
+                       replications=noBenchRep)
+    elapTime <- c("elapsed"=bench$elapsed,
+                  "user"=bench$user.self,
+                  "sys"=bench$sys.self)/noBenchRep
+    res <- list(elapTime=elapTime,
+                wmwTestRes=wmwTestRes)
+    return(res)
+    })
+  
+  rRes <- lapply(tmRandomMats, function(mat) {
+    elapTime <- system.time(wmwTestRes <- wmwTestR(mat, tissueInds, alternative="greater"))
+    res <- list(elapTime=elapTime,
+                wmwTestRes=wmwTestRes)
+    return(res)
+    })
+  save(bioqcRes, rRes, file=benchmarkFile)
+  } else {
+    load(benchmarkFile)
+ }
+getWmwTestRes <- function(x) x$wmwTestRes
+rNumRes <- lapply(rRes, getWmwTestRes)
+bioqcNumRes <- lapply(bioqcRes, getWmwTestRes)
+```
+
+The numeric results of both implementations, `bioqcNumRes` (from *BioQC*) and `rNumRes` (from *R*), are equivalent, as shown by the next     command.
+
+```{r time_benchmark_identical}
+expect_equal(bioqcNumRes, rNumRes)
+```
+
+The *BioQC* implementation is more than 500 times much faster (fig...): while it takes about one second for BioQC to calculate enrichment scores of all `r length(gmt)` signatures in 100 samples, the native R implementation takes about 20 minutes.
+
+```{r trellis_prepare, echo=FALSE}
+op <- list(layout.widths = list(left.padding = 0, key.ylab.padding = 0.5,
+                                ylab.axis.padding = 0.5, axis.right = 0.5, right.padding = 0),
+           layout.heights = list(top.padding = 0, bottom.padding = 0,
+                                 axis.top = 0, main.key.padding = 0.5, key.axis.padding = 0.5),
+           axis.text=list(cex=1.2),
+           par.xlab.text=list(cex=1.4),
+           par.sub.text=list(cex=1.4),
+           add.text=list(cex=1.4),
+           par.ylab.text=list(cex=1.4))
+```
+
+```{r time_benchmark_vis, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server."}
+getTimeRes <- function(x) x$elapTime["elapsed"]
+bioqcTimeRes <- sapply(bioqcRes, getTimeRes)
+rTimeRes <- sapply(rRes, getTimeRes)
+timeRes <- data.frame(NoSample=noSamples,
+                      Time=c(bioqcTimeRes, rTimeRes),
+                      Method=rep(c("BioQC", "NativeR"), each=length(noSamples)))
+timeXY <- xyplot(Time ~ NoSample, group=Method, data=timeRes,  type="b",
+                 auto.key=list(columns=2L),
+                 xlab="Number of samples", ylab="Time [s]",
+                 par.settings=list(superpose.symbol=list(cex=1.25, pch=16, col=c("black", "red")),
+                                   superpose.line=list(col=c("black", "red"))),
+                 scales=list(tck=c(1,0), alternating=1L,
+                             x=list(at=noSamples),
+                             y=list(log=2, at=10^c(-2, -1, 0,1,2,3, log10(2000)), labels=c(0.01, 0.1, 1, 10,100,1000, 2000))))
+timeFactor <- with(timeRes,
+                   tapply(1:nrow(timeRes),
+                          list(NoSample),  function(x) {
+                            bioqcTime <- subset(timeRes[x,], Method=="BioQC")$Time
+                            rTime <- subset(timeRes[x,], Method=="NativeR")$Time
+                            rTime/bioqcTime
+                            }))
+timeFactor.yCeiling <- max(ceiling(timeFactor/500))*500
+timeFactorBar <- barchart(timeFactor ~ noSamples, horizontal=FALSE,
+                          xlab="Number of samples", ylab="Ratio of elapsed time [NativeR/BioQC]",
+                          ylim=c(-20, timeFactor.yCeiling+50), col=colorRampPalette(c("lightblue", "navyblue"))(length(noSamples)),
+                          scales=list(tck=c(1, 0), alternating=1L,
+                                      y=list(at=seq(0,timeFactor.yCeiling, by=500)),
+                                      x=list(at=seq(along=timeFactor), labels=noSamples)))
+trellis.par.set(op)
+print(timeXY, c(0, 0, 0.5, 1), more=TRUE)
+print(timeFactorBar, c(0.5, 0, 1, 1), more=FALSE)
+```
+
+The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes     only once for each gene set, independent of how many samples are tested.
+
+In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is          negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the     time- and memory-efficiency.
+
+Putting these tweaks together, *BioQC* achieves identical results as the native implementation with two order of magnitude less time. This    renders *BioQC*~an highly efficient tool for quality control of large-scale high-throughput gene expression data.
+
+
+
+R Session Info
+----------------
+```{r session_info}
+sessionInfo()
+```
