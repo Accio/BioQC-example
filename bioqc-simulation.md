@@ -59,13 +59,30 @@ The numeric results of both implementations, `bioqcNumRes` (from *BioQC*) and `r
 expect_equal(bioqcNumRes, rNumRes)
 ```
 
-The *BioQC* implementation is more than 500 times much faster (fig...): while it takes about one second for BioQC to calculate enrichment scores of all 155 signatures in 100 samples, the native R implementation takes about 20 minutes.
+The *BioQC* implementation is more than 500 times much faster: while it takes about one second for BioQC to calculate enrichment scores of all 155 signatures in 100 samples, the native R implementation takes about 20 minutes: 
 
 
 
 <div class="figure" style="text-align: center">
 <img src="bioqc-simulation_files/figure-html/time_benchmark_vis-1.svg" alt="Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server." style="display:block; margin: auto" />
 <p class="caption">Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server.</p>
+</div>
+
+The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes     only once for each gene set, independent of how many samples are tested.
+
+In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is          negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the     time- and memory-efficiency.
+
+Putting these tweaks together, *BioQC* achieves identical results as the native implementation with two order of magnitude less time. This    renders *BioQC*~an highly efficient tool for quality control of large-scale high-throughput gene expression data.
+
+
+
+Sensitivity Benchmark
+---------------------
+We next asked the question how sensitive is *BioQC* to expression changes of tissue signature genes. Similar to the previous simulation,      while keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
+
+<div class="figure" style="text-align: center">
+<img src="bioqc-simulation_files/figure-html/sensitivity_benchmark_fig-1.svg" alt="Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values." style="display:block; margin: auto" />
+<p class="caption">Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values.</p>
 </div>
 
 
@@ -103,11 +120,12 @@ sessionInfo()
 ## [19] Rcpp_0.12.0          testthat_1.0.2       knitr_1.13          
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] bitops_1.0-6       caTools_1.17.1     crayon_1.3.1      
-##  [4] digest_0.6.9       evaluate_0.9       formatR_1.4       
-##  [7] gdata_2.17.0       grid_3.1.3         gtools_3.5.0      
-## [10] htmltools_0.3.5    KernSmooth_2.23-15 magrittr_1.5      
-## [13] memoise_1.0.0      R6_2.1.2           RCurl_1.95-4.8    
-## [16] rmarkdown_1.0      stringi_1.0-1      stringr_1.0.0     
-## [19] tools_3.1.3        XML_3.98-1.3       yaml_2.1.13
+##  [1] bitops_1.0-6       caTools_1.17.1     codetools_0.2-14  
+##  [4] crayon_1.3.1       digest_0.6.9       evaluate_0.9      
+##  [7] formatR_1.4        gdata_2.17.0       grid_3.1.3        
+## [10] gtools_3.5.0       htmltools_0.3.5    KernSmooth_2.23-15
+## [13] magrittr_1.5       memoise_1.0.0      R6_2.1.2          
+## [16] RCurl_1.95-4.8     rmarkdown_1.0      stringi_1.0-1     
+## [19] stringr_1.0.0      tools_3.1.3        XML_3.98-1.3      
+## [22] yaml_2.1.13
 ```

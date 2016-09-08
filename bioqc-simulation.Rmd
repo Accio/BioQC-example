@@ -1,5 +1,5 @@
 ---
-title: "BioQC-kidney: The kidney expression example"
+title: "BioQC-benchmark: Testing Efficiency, Sensitivity and Specificity of BioQC on simulated and real-world data"
 output: 
   html_document: 
     keep_md: yes
@@ -86,7 +86,7 @@ wmwTestR <- function(matrix, indices, alternative) {
   }
 
 ## WARNING: very slow (~1-2 hours)
-benchmarkFile <- "simluation-benchmark.RData"
+benchmarkFile <- "simulation-benchmark.RData"
 if(!file.exists(benchmarkFile)) {
   bioqcRes <- lapply(tmRandomMats, function(mat) {
     bench <- benchmark(wmwTestRes<- wmwTest(mat,
@@ -184,7 +184,7 @@ Sensitivity Benchmark
 ---------------------
 We next asked the question how sensitive is *BioQC* to expression changes of tissue signature genes. Similar to the previous simulation,      while keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
 
-```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=4, fig.cap="Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values."}
+```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values."}
 randomMatrixButOneSignature <- function(rows=humanGenes, signatureGenes,
                                         amplitudes=seq(0, 3, by=0.5)) {
   nrow <- length(rows)
@@ -248,6 +248,23 @@ print(sensePlot, pos=c(0, 0, 0.5, 1), more=TRUE)
 print(senseRankPlot, pos=c(0.5, 0, 1, 1), more=FALSE)
 
 ``` 
+
+
+The above figure visualizes the distribution of enrichment scores and their ranks dependent on the mean expression difference between ovary signature genes and background genes. As soon as the expression of signature genes increases by a very moderate ampltiude $1\sigma$, *BioQC* will identify the gene set as the highest-ranking signature. A even stronger difference in expression will lead to higher enrichment scores but no change in the rank.
+
+The results suggest that *BioQC* is sensitive even to moderate changes in the average expression of a gene set.
+
+
+
+
+Mixing Benchmark
+----------------
+The sensitivity benchmark above suffers from the limitation that the distributions of gene expression are not physiological. To overcome this, we      designed and performed a benchmark by *in silico* mixing expression profiles with weighted linear combination, thereby mimicking tissue contamination.
+
+ Given the expression profile of a sample of tissue A (\begin{math}\mathbf{Y}_A\end{math}), and that of a sample of tissue B                            (\begin{math}\mathbf{Y}_B\end{math}), the weighted linear mixing produces a new profile \begin{math}\mathbf{Y}=\omega\mathbf{Y_A}+(1-                  \omega)\mathbf{Y_B}\end{math}, where \begin{math}\omega \in [0,1]\end{math}. In essence the profiles of two tissue types are linearly mixed in         different proportions, which simulates varying severities of contaminations. We asked whether BioQC could detect such mixings, and if so, how          sensitive is the method.
+
+
+
 
 
 R Session Info
