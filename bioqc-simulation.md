@@ -157,6 +157,44 @@ GSM502611   Spleen           Monocytes                 Myeloblast
 By comparing the tissue labels provided by the authors and the predictions of *BioQC*, we notice that in most cases the two match well        (despite of ontological differences). In three cases (sample ID GSM502573, GSM502594, and GSM502596) though there seem to be intriguing differences, which might be explained by different sampling procedures or immune cell infiltration. We will however in this vignette not further explore them. These three samples are removed from the simulation procedures.
 
 
+### An example of weighted mixing: heart and jejunum
+
+As an example, we take average expression of heart and jejunum samples, and mix them by different compositions.
+
+
+
+<div class="figure" style="text-align: center">
+<img src="bioqc-simulation_files/figure-html/hjMixVis-1.svg" alt="Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum." style="display:block; margin: auto" />
+<p class="caption">Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum.</p>
+</div>
+
+The above figure \@ref(fig:hjMixVis) allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*. We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end, namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
+
+While it is difficult to quantify the absolute sensitivity of contamination detection, it is apparent that if the enrichment score of a unforeseen tissue is very high (or ranked high), one may suspect potential contamination. Also, if there are replicates of samples from the same tissue, a        higher value in one sample compared with the other samples suggests a contamination or infiltration incident.
+
+
+
+### Pairwise Mixing
+
+Following the heart-jejunum example, we performed all 45 pairwise mixing experiments, producing weighted linear combinations of gene expression        profiles of each pair of tissues (excluding self-mixing). The results are summaried in a heatmap:
+
+<div class="figure" style="text-align: center">
+<img src="bioqc-simulation_files/figure-html/dog_mix_vis-1.svg" alt="Results of the pairwise mixing experiment. Each cell represents the minimal percentage of tissue of the column as contamination in the tissue of the row that can be detected by *BioQC*. No values are available for cells on the diagonal because self-mixing was excluded. Heart  and skeletal muscle are very close to each other and therefore their detection limit is not considered." style="display:block; margin: auto" />
+<p class="caption">Results of the pairwise mixing experiment. Each cell represents the minimal percentage of tissue of the column as contamination in the tissue of the row that can be detected by *BioQC*. No values are available for cells on the diagonal because self-mixing was excluded. Heart  and skeletal muscle are very close to each other and therefore their detection limit is not considered.</p>
+</div>
+
+
+
+The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (0.15) means that if there are 15% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 3 of all tissue signatures.
+
+Take another cell in row 2 column 1 from top left: its value (0.5) means that if there are 50% or more contanmination by brain in a heart sample, *BioQC* will be able to detect it. Here we observe the asymmetry again that we observed before with the heart/jejenum example: while it is relative easy to identify heart contamination of a brain sample, it is more difficult to identify brain contamination of a heart sample in this dataset.
+
+The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the figure "pairwise_mix" except for diagonal and missing elements.
+
+
+
+
+
 
 R Session Info
 ----------------

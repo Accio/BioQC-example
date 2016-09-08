@@ -329,7 +329,7 @@ heart <- rowMeans(exprs(dog)[, dog$Label=="Heart"])
  mixProps <- seq(0, 1, 0.05)
  mixPropsLabels <- sprintf("%d%%", mixProps*100)
  hjMix <- sapply(mixProps, function(x) linearMix(jejunum, heart, x))
- hjMixBioQC <- wmwTest(hjMix, dogInds, alternative="greater")
+ hjMixBioQC <- wmwTest(hjMix, dogInds, valType="p.greater", simplify=TRUE)
  hjMixSub <- hjMixBioQC[c("Intestine_small_NR_0.7_3","Muscle_cardiac_NR_0.7_3"),]
  hjMixSubEnrich <- absLog10p(hjMixSub)
  hjMixBioQCrank <- apply(hjMixBioQC, 2, function(x) rank(x))
@@ -337,7 +337,7 @@ heart <- rowMeans(exprs(dog)[, dog$Label=="Heart"])
  colnames(hjMixSubEnrich) <- colnames(hjMixSubRank) <- mixPropsLabels
 ``` 
 
-```{r hj_mix_vis, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum."}
+```{r hjMixVis, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum."}
 mixPropsShow <- seq(0, 1, 0.25)
 mixPropsShowLabels <- sprintf("%d%%", mixPropsShow*100)
 hjCols <- c("orange", "lightblue")
@@ -369,7 +369,7 @@ print(hjMixXY, pos=c(0,0,0.5,1), more=TRUE)
 print(hjMixRankXY, pos=c(0.5,0,1,1), more=FALSE)
 ``` 
 
-The above figure allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*. We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart      signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end,       namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of           contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
+The above figure \@ref(fig:hjMixVis) allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*. We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end, namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
 
 While it is difficult to quantify the absolute sensitivity of contamination detection, it is apparent that if the enrichment score of a unforeseen tissue is very high (or ranked high), one may suspect potential contamination. Also, if there are replicates of samples from the same tissue, a        higher value in one sample compared with the other samples suggests a contamination or infiltration incident.
 
@@ -394,7 +394,7 @@ dogPairwise <- apply(dogComb, 1, function(x) {
                       label1 <- dogLabels[x[1]]
                       label2 <- dogLabels[x[2]]
                       mix <- sapply(mixProps, function(x) linearMix(vec1, vec2, x))
-                      bioqc <- wmwTest(mix, dogInds, alternative="greater")
+                      bioqc <- wmwTest(mix, dogInds, valType="p.greater", simplify=TRUE)
                       ranks <- apply(bioqc, 2, rank)
                       enrich <- absLog10p(bioqc)
                       colnames(enrich) <- colnames(ranks) <- mixPropsLabels
@@ -455,7 +455,7 @@ cell12Per <- as.integer(cell12*100)
 cell21Per <- as.integer(cell21*100)
 ```
 
-The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (\Sexpr{cell12}) means that if there are `r cell12Per`% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 3 of all tissue signatures.
+The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (`r cell12`) means that if there are `r cell12Per`% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 3 of all tissue signatures.
 
 Take another cell in row 2 column 1 from top left: its value (`r cell21`) means that if there are `r cell21Per`% or more contanmination by brain in a heart sample, *BioQC* will be able to detect it. Here we observe the asymmetry again that we observed before with the heart/jejenum example: while it is relative easy to identify heart contamination of a brain sample, it is more difficult to identify brain contamination of a heart sample in this dataset.
 
