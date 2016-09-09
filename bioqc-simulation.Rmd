@@ -139,7 +139,6 @@ op <- list(layout.widths = list(left.padding = 0, key.ylab.padding = 0.5,
 ```
 
 ```{r time_benchmark_vis, echo=FALSE, fig.width=8, fig.height=3, dev='svg', dev.args=list(pointsize=2.5), fig.cap="Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server."}
-par(ps = 5, cex = 1, cex.main = 1)
 getTimeRes <- function(x) x$elapTime["elapsed"]
 bioqcTimeRes <- sapply(bioqcRes, getTimeRes)
 rTimeRes <- sapply(rRes, getTimeRes)
@@ -166,7 +165,7 @@ timeFactor.yCeiling <- max(ceiling(timeFactor/500))*500
 timeFactorBar <- barchart(timeFactor ~ noSamples, horizontal=FALSE,
                           xlab="Number of samples", ylab="Ratio of elapsed time [R/BioQC]",
                           ylim=c(-20, timeFactor.yCeiling+50), col=colorRampPalette(c("lightblue", "navyblue"))(length(noSamples)),
-                          scales=list(cex.axis=.5, tck=c(1, 0), alternating=1L,
+                          scales=list(tck=c(1, 0), alternating=1L,
                                       y=list(at=seq(0,timeFactor.yCeiling, by=500)),
                                       x=list(at=seq(along=timeFactor), labels=noSamples)))
 
@@ -308,7 +307,7 @@ In order to avoid over-fitting of signatures derived from human expression data,
 
 In this study, the authors examined 39 samples from 10 pathologically normal tissues (liver, kidney, heart, lung, brain, lymph node, spleen, jejunum,  pancreas, and skeletal muscle) of four dogs (with one pancreas sample missing). We downloaded the data, and performed minimal pre-processing: for multiple probesets that map to same genes, we kept the one with the highest average expression level and removed the rest. The resulting dataset contained expression of `r nrow(dog)` genes. BioQC was applied to the dataset to test whether there are major contamination issues. The results, including tissues reported by the authors, and the BioQC tissue signatures with the highest and second-highest scores, are reported in the following table: 
 
-```{r dob_table, echo=FALSE}
+```{r dog_table, echo=FALSE}
 kable(dogTable, caption="Quality control of the mixing benchmark input data with *BioQC*. Four columns (f.l.t.r.): sample index; tissue         reported by the authors; the tissue signature with the highest enrichment score reported by *BioQC*; the tissue signature with the second-   highest enrichment score.")
 ``` 
 
@@ -434,17 +433,28 @@ for(i in 1:nrow(dogComb)) {
 
 Following the heart-jejunum example, we performed all 45 pairwise mixing experiments, producing weighted linear combinations of gene expression        profiles of each pair of tissues (excluding self-mixing). The results are summaried in a heatmap:
 
-```{r dog_mix_vis, echo=FALSE, fig.width=6, fig.height=6, dev='svg', fig.cap="Results of the pairwise mixing experiment. Each cell represents the minimal percentage of tissue of the column as contamination in the tissue of the row that can be detected by *BioQC*. No values are available for cells on the diagonal because self-mixing was excluded. Heart  and skeletal muscle are very close to each other and therefore their detection limit is not considered."}
+```{r dog_mix_vis, echo=FALSE, fig.width=8, fig.height=5, dev='svg', fig.cap="Results of the pairwise mixing experiment. Each cell represents the minimal percentage of tissue of the column as contamination in the tissue of the row that can be detected by *BioQC*. No values are available for cells on the diagonal because self-mixing was excluded. Heart  and skeletal muscle are very close to each other and therefore their detection limit is not considered."}
 
 dogMixCol <- colorRampPalette(c("#67A9CF", "black", "#EF8A62"))(100)
-
-heatmap.2(comProp, Rowv=NA, Colv=NA, dendrogram="none", col=dogMixCol,
-           lwid=c(1,3), lhei=c(1,3),  breaks=seq(0,1,0.01),
-           key.title="Enrichment score", key.xlab="Detection limit",
-           xlab="Contamination tissue", ylab="Originating tissue",
-           key.par=list(cex.lab=1.25, mar=c(4,2,1,0), mgp=c(1.5,0.5,0)),
-           cexRow=1.25, margins=c(8,8), trace="none", offsetRow=0, offsetCol=0,
-           density.info="none",na.col="gray")
+heatmap.2(x=comProp, Rowv=NULL,Colv=NULL, 
+          col = dogMixCol, 
+          scale="none",
+          margins=c(9,9), # ("margin.Y", "margin.X")
+          trace='none', 
+          symkey=FALSE, 
+          symbreaks=FALSE, 
+          breaks=seq(0,1,0.01),
+          dendrogram='none',
+          density.info='none', 
+          denscol="black",
+          na.col="gray",
+          offsetRow=0, offsetCol=0,
+          keysize=1, key.title="Enrichment score", key.xlab="Detection limit", 
+          xlab="Contamination tissue", ylab="Originating tissue",
+          #( "bottom.margin", "left.margin", "top.margin", "right.margin" )
+          key.par=list(mar=c(5,0,1,8)),
+          # lmat -- added 2 lattice sections (5 and 6) for padding
+          lmat=rbind(c(5, 4, 2), c(6, 1, 3)), lhei=c(1.6, 5), lwid=c(1, 4, 1))
 
 ```
 
@@ -455,11 +465,11 @@ cell12Per <- as.integer(cell12*100)
 cell21Per <- as.integer(cell21*100)
 ```
 
-The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (`r cell12`) means that if there are `r cell12Per`% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 3 of all tissue signatures.
+The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (`r cell12`) means that if there are `r cell12Per`% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 10 of all tissue signatures.
 
-Take another cell in row 2 column 1 from top left: its value (`r cell21`) means that if there are `r cell21Per`% or more contanmination by brain in a heart sample, *BioQC* will be able to detect it. Here we observe the asymmetry again that we observed before with the heart/jejenum example: while it is relative easy to identify heart contamination of a brain sample, it is more difficult to identify brain contamination of a heart sample in this dataset.
+Take another cell in row 2 column 1 from top left: its value (`r cell21`) means that if there are `r cell21Per`% or more contanmination by brain in a heart sample, *BioQC* will be able to detect it. Here we observe the asymmetry again that we observed before with the heart/jejenum example: while it is realtively easy to identify heart contamination of a brain sample, it is more difficult to identify brain contamination of a heart sample in this dataset.
 
-The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the figure "pairwise_mix" except for diagonal and missing elements.
+The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the heatmap, except for diagonal and missing elements.
 
 ```{r table_detect_limit, echo=FALSE}
 meanThr <- colMeans(comProp, na.rm=TRUE)
@@ -467,9 +477,9 @@ meanThrShow <- data.frame(Tissue=names(meanThr), MedianDetectionLimit=sprintf("%
 kable(meanThrShow, caption="Median lower detection limites of tissues as contamination sources.")
 ```
 
-Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are `r length(grep("Brain", names(gmt), ignore.case=TRUE))` distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes (fig:brain). Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets.
+Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are `r length(grep("Brain", names(gmt), ignore.case=TRUE))` distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes:  
 
-```{r brain_low_exp, echo=FALSE, fig.width=6, fig.height=4, dev='svg', fig.cap="Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest."}
+```{r brain_low_exp, echo=FALSE, fig.width=6, fig.height=3, dev='svg', fig.cap="Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest."}
 dogAvgGs <- c("Brain_Cortex_prefrontal_NR_0.7_3",
               "Muscle_cardiac_NR_0.7_3",
               "Intestine_small_NR_0.7_3",
@@ -516,7 +526,9 @@ abline(h=1.25)
 
 ```
 
-Otherwise, most *in silico* contamination events are detectable in this dataset, with median detection limit around `r median(comProp, na.rm=TRUE)`. This suggests that *BioQC* is sensitive towards tissue heterogeneity in physiological settings.
+Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets. 
+
+Apart from that, most *in silico* contamination events are detectable in this dataset, with median detection limit around `r median(comProp, na.rm=TRUE)`. This suggests that *BioQC* is sensitive towards tissue heterogeneity in physiological settings.
 
 
 

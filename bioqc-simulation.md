@@ -160,7 +160,8 @@ By comparing the tissue labels provided by the authors and the predictions of *B
 
 ### An example of weighted mixing: heart and jejunum
 
-As an example, we take average expression of heart and jejunum samples, and mix them by different compositions.
+As an example, we take average expression of heart and jejunum samples, and mix them by different compositions. 
+This allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*:
 
 
 
@@ -169,7 +170,7 @@ As an example, we take average expression of heart and jejunum samples, and mix 
 <p class="caption">Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum.</p>
 </div>
 
-The above figure \@ref(fig:hjMixVis) allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*. We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end, namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
+We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end, namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
 
 While it is difficult to quantify the absolute sensitivity of contamination detection, it is apparent that if the enrichment score of a unforeseen tissue is very high (or ranked high), one may suspect potential contamination. Also, if there are replicates of samples from the same tissue, a        higher value in one sample compared with the other samples suggests a contamination or infiltration incident.
 
