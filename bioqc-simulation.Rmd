@@ -13,7 +13,7 @@ library(knitr)
 opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="center")
 ```
 
-In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
+In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code used to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
 *BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an      efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
 
@@ -22,8 +22,8 @@ Experiment setup
 ----------------
 In this document, we perform three simulation studies with *BioQC*:
 
-* **Time benchmark** tests the time-efficiency of the Wilcoxon test implemented in *BioQC*, compared with the native implementation in *R;
-* **Sensitivity benchmark** tests the sensitivity and specificity of *BioQC* detecting tissue heterogeneity using model-generated simulated data;
+* **Time benchmark** tests the time-efficiency of the Wilcoxon test implemented in *BioQC*, compared with the native implementation in *R*;
+* **Sensitivity benchmark** tests the sensitivity and specificity of *BioQC* detecting tissue heterogeneity using model-generated, simulated data;
 * **Mixing benchmark** tests the sensitivity and specificity of *BioQC* using simulated contamination with real-world data.
 
 All source code that is needed to reproduce the results can be found in the `.Rmd` file generating this document. 
@@ -34,6 +34,7 @@ library(BioQC)
 library(hgu133plus2.db) ## to simulate an microarray expression dataset
 library(lattice)
 library(latticeExtra)
+library(gridExtra)
 library(GEOquery)
 library(xtable)
 library(gplots)
@@ -55,7 +56,7 @@ gmt <- readGmt(gmtFile)
 
 Time benchmark
 --------------
-In the first experiment, we setup expression matrices of `r length(humanGenes)` human protein-coding genes of 1, 5, 10, 50, or 100 samples. Genes  are $i.i.d$ distributed following $\mathcal{N}(0,1)$. The Wilcoxon-Mann-Whitney test implemented in *BioQC* and the native *R* implementation are applied to the matrices respectively.
+In the first experiment, we setup random expression matrices of `r length(humanGenes)` human protein-coding genes of 1, 5, 10, 50, or 100 samples. Genes  are $i.i.d$ distributed following $\mathcal{N}(0,1)$. The native R and the *BioQC* implementations of the Wilcoxon-Mann-Whitney test are applied to the matrices respectively.
 
 
 ```{r time_benchmark, cache=TRUE, echo=FALSE}
@@ -137,7 +138,8 @@ op <- list(layout.widths = list(left.padding = 0, key.ylab.padding = 0.5,
            par.ylab.text=list(cex=1.4))
 ```
 
-```{r time_benchmark_vis, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server."}
+```{r time_benchmark_vis, echo=FALSE, fig.width=8, fig.height=3, dev='svg', dev.args=list(pointsize=2.5), fig.cap="Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server."}
+par(ps = 5, cex = 1, cex.main = 1)
 getTimeRes <- function(x) x$elapTime["elapsed"]
 bioqcTimeRes <- sapply(bioqcRes, getTimeRes)
 rTimeRes <- sapply(rRes, getTimeRes)
@@ -167,9 +169,9 @@ timeFactorBar <- barchart(timeFactor ~ noSamples, horizontal=FALSE,
                           scales=list(cex.axis=.5, tck=c(1, 0), alternating=1L,
                                       y=list(at=seq(0,timeFactor.yCeiling, by=500)),
                                       x=list(at=seq(along=timeFactor), labels=noSamples)))
-trellis.par.set(op)
-print(timeXY, c(0, 0.02, 0.5, .98), more=TRUE)
-print(timeFactorBar, c(0.5, 0.02, 1, .98), more=FALSE)
+
+grid.arrange(timeXY, timeFactorBar, ncol=2)
+
 ```
 
 The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes     only once for each gene set, independent of how many samples are tested.
@@ -461,7 +463,91 @@ Take another cell in row 2 column 1 from top left: its value (`r cell21`) means 
 
 The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the figure "pairwise_mix" except for diagonal and missing elements.
 
+```{r table_detect_limit, echo=FALSE}
+meanThr <- colMeans(comProp, na.rm=TRUE)
+meanThrShow <- data.frame(Tissue=names(meanThr), MedianDetectionLimit=sprintf("%1.2f%%", meanThr*100))
+kable(meanThrShow, caption="Median lower detection limites of tissues as contamination sources.")
+```
 
+Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are `r length(grep("Brain", names(gmt), ignore.case=TRUE))` distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes (fig:brain). Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets.
+
+```{r brain_low_exp, echo=FALSE, fig.width=6, fig.height=4, dev='svg', fig.cap="Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest."}
+dogAvgGs <- c("Brain_Cortex_prefrontal_NR_0.7_3",
+              "Muscle_cardiac_NR_0.7_3",
+              "Intestine_small_NR_0.7_3",
+              "Kidney_NR_0.7_3",
+              "Liver_NR_0.7_3",
+              "Lung_NR_0.7_3",
+              "Lymphocyte_B_FOLL_NR_0.7_3",
+              "Pancreas_Islets_NR_0.7_3",
+              "Muscle_skeletal_NR_0.7_3",
+              "Monocytes_NR_0.7_3")
+dogAvgGsGenes <- sapply(gmt[dogAvgGs], function(x) x$genes)
+dogAvgGsGeneInds <- lapply(dogAvgGsGenes, function(x) {
+  inds <- match(x, fData(dog)$GeneSymbol)
+  inds[!is.na(inds)]
+  })
+
+## boxplot of tissue-specific genes
+dogAvgGsRel <- sapply(seq(along=dogAvgGsGeneInds), function(i) {
+  ind <- dogAvgGsGeneInds[[i]]
+  bgInd <- setdiff(1:nrow(dog), ind)
+  apply(dogAvgMat, 2, function(x) median(x[ind]/median(x[bgInd])))
+  })
+colnames(dogAvgGsRel) <- colnames(dogAvgMat)
+##heatmap.2(log2(dogAvgGsRel),zlim=c(-1,1),
+##          cellnote=round(dogAvgGsRel,1),
+##          Rowv=NA, Colv=NA, dendrogram="none",  col=greenred,
+##          lwid=c(1,3), lhei=c(1,3),
+##          key.title="Enrichment score", key.xlab="Detection limit",
+##          xlab="Tissue signature", ylab="Tissue profiles",
+##          key.par=list(cex.lab=1.25, mar=c(4,2,1,0), mgp=c(1.5,0.5,0)),
+##          cexRow=1.25, margins=c(8,8), trace="none", offsetRow=0, offsetCol=0,
+##          density.info="none",na.col="gray", breaks=seq(-1,1,0.01), symbreaks=TRUE)
+
+op <- par(mar=c(8,4,1,1))
+barplot(sort(diag(dogAvgGsRel)), las=3, ylab="Median ratio of expression (signature/background)")
+abline(h=1.25)
+## op <- par(mar=c(8,4,1,1))
+## dogAvgES <- absLog10p(diag(wmwTest(dogAvgMat, dogAvgGsGeneInds, alternative="greater")))
+## names(dogAvgES) <- colnames(dogAvgMat)
+## barplot(sort(dogAvgES, decreasing=TRUE), las=3, ylab="ES in respective average tissue profile")
+## par(op)
+## plot(meanThr, dogAvgES, type="n", xlab="Average lower detection limit", ylab="BioQC ES score")
+## text(meanThr, dogAvgES, colnames(dogAvgMat))
+
+```
+
+Otherwise, most *in silico* contamination events are detectable in this dataset, with median detection limit around `r median(comProp, na.rm=TRUE)`. This suggests that *BioQC* is sensitive towards tissue heterogeneity in physiological settings.
+
+
+
+
+Conclusions
+===========
+Benchmark studies with similated and real-world data demonstrate that *BioQC* is an efficient and sensitive method to detect tissue            heterogeneity from high-throughput gene expression data.
+
+
+Appendix
+========
+
+### Comparing BioQC with Principal Component Analysis (PCA)
+In the context of the dog transcriptome dataset, we can compare the results of principal component analysis (PCA), with that of *BioQC*:
+
+```{r pca, echo=FALSE, fig.width=6, fig.height=6, dev='svg', fig.cap="Sample separation revealed by principal component analysis (PCA) of the dog transcriptome dataset."}
+par(mar=c(4,4,2,2))
+dogEXP <- exprs(dog); colnames(dogEXP) <- dog$Label
+dogPCA <- prcomp(t(dogEXP))
+expVar <- function(pcaRes, n) {vars <- pcaRes$sdev^2; (vars/sum(vars))[n]}
+biplot(dogPCA, col=c("#335555dd", "transparent"), cex=1.15,
+       xlab=sprintf("Principal component 1 (%1.2f%%)", expVar(dogPCA,1)*100),
+       ylab=sprintf("Principal component 1 (%1.2f%%)", expVar(dogPCA,2)*100))
+
+```
+
+PCA sugggests that samples from each tissue tend to cluster together, in line with the *BioQC* results. In addition, PCA reveals that         tissues with cells of similar origins cluster together, such as skeletal muscle and heart. As expected, one brain sample and two lung samples seem to be different from other samples of the same cluster, which are consistent with the *BioQC* findings; however, unlike BioQC, PCA does not      provide information on what are potential contamination/infiltration casues.
+
+Therefore, we believe *BioQC* complements existing unsupervised methods to inspect quality of gene expression data.
 
 
 

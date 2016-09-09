@@ -4,7 +4,7 @@ Supplementary Information for "Detect issue heterogenity in gene expression data
 
 
 
-In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
+In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code used to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
 *BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an      efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
 
@@ -13,8 +13,8 @@ Experiment setup
 ----------------
 In this document, we perform three simulation studies with *BioQC*:
 
-* **Time benchmark** tests the time-efficiency of the Wilcoxon test implemented in *BioQC*, compared with the native implementation in *R;
-* **Sensitivity benchmark** tests the sensitivity and specificity of *BioQC* detecting tissue heterogeneity using model-generated simulated data;
+* **Time benchmark** tests the time-efficiency of the Wilcoxon test implemented in *BioQC*, compared with the native implementation in *R*;
+* **Sensitivity benchmark** tests the sensitivity and specificity of *BioQC* detecting tissue heterogeneity using model-generated, simulated data;
 * **Mixing benchmark** tests the sensitivity and specificity of *BioQC* using simulated contamination with real-world data.
 
 All source code that is needed to reproduce the results can be found in the `.Rmd` file generating this document. 
@@ -26,6 +26,7 @@ library(BioQC)
 library(hgu133plus2.db) ## to simulate an microarray expression dataset
 library(lattice)
 library(latticeExtra)
+library(gridExtra)
 library(GEOquery)
 library(xtable)
 library(gplots)
@@ -47,7 +48,7 @@ gmt <- readGmt(gmtFile)
 
 Time benchmark
 --------------
-In the first experiment, we setup expression matrices of 20155 human protein-coding genes of 1, 5, 10, 50, or 100 samples. Genes  are $i.i.d$ distributed following $\mathcal{N}(0,1)$. The Wilcoxon-Mann-Whitney test implemented in *BioQC* and the native *R* implementation are applied to the matrices respectively.
+In the first experiment, we setup random expression matrices of 20155 human protein-coding genes of 1, 5, 10, 50, or 100 samples. Genes  are $i.i.d$ distributed following $\mathcal{N}(0,1)$. The native R and the *BioQC* implementations of the Wilcoxon-Mann-Whitney test are applied to the matrices respectively.
 
 
 
@@ -192,6 +193,52 @@ Take another cell in row 2 column 1 from top left: its value (0.5) means that if
 The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the figure "pairwise_mix" except for diagonal and missing elements.
 
 
+Table: Median lower detection limites of tissues as contamination sources.
+
+Tissue           MedianDetectionLimit 
+---------------  ---------------------
+Brain            52.22%               
+Heart            10.62%               
+Jejunum          19.44%               
+Kidney           23.75%               
+Liver            11.87%               
+Lung             31.67%               
+LymphNode        30.63%               
+Pancreas         17.22%               
+SkeletalMuscle   15.00%               
+Spleen           13.57%               
+
+Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are 22 distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes (fig:brain). Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets.
+
+<div class="figure" style="text-align: center">
+<img src="bioqc-simulation_files/figure-html/brain_low_exp-1.svg" alt="Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest." style="display:block; margin: auto" />
+<p class="caption">Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest.</p>
+</div>
+
+Otherwise, most *in silico* contamination events are detectable in this dataset, with median detection limit around 0.2. This suggests that *BioQC* is sensitive towards tissue heterogeneity in physiological settings.
+
+
+
+
+Conclusions
+===========
+Benchmark studies with similated and real-world data demonstrate that *BioQC* is an efficient and sensitive method to detect tissue            heterogeneity from high-throughput gene expression data.
+
+
+Appendix
+========
+
+### Comparing BioQC with Principal Component Analysis (PCA)
+In the context of the dog transcriptome dataset, we can compare the results of principal component analysis (PCA), with that of *BioQC*:
+
+<div class="figure" style="text-align: center">
+<img src="bioqc-simulation_files/figure-html/pca-1.svg" alt="Sample separation revealed by principal component analysis (PCA) of the dog transcriptome dataset." style="display:block; margin: auto" />
+<p class="caption">Sample separation revealed by principal component analysis (PCA) of the dog transcriptome dataset.</p>
+</div>
+
+PCA sugggests that samples from each tissue tend to cluster together, in line with the *BioQC* results. In addition, PCA reveals that         tissues with cells of similar origins cluster together, such as skeletal muscle and heart. As expected, one brain sample and two lung samples seem to be different from other samples of the same cluster, which are consistent with the *BioQC* findings; however, unlike BioQC, PCA does not      provide information on what are potential contamination/infiltration casues.
+
+Therefore, we believe *BioQC* complements existing unsupervised methods to inspect quality of gene expression data.
 
 
 
@@ -222,20 +269,21 @@ sessionInfo()
 ## 
 ## other attached packages:
 ##  [1] rbenchmark_1.0.0     gplots_3.0.1         xtable_1.8-2        
-##  [4] GEOquery_2.32.0      latticeExtra_0.6-28  RColorBrewer_1.1-2  
-##  [7] lattice_0.20-33      hgu133plus2.db_3.0.0 org.Hs.eg.db_3.0.0  
-## [10] RSQLite_1.0.0        DBI_0.4-1            AnnotationDbi_1.28.2
-## [13] GenomeInfoDb_1.2.5   IRanges_2.0.1        S4Vectors_0.4.0     
-## [16] BioQC_1.02.1         Biobase_2.26.0       BiocGenerics_0.12.1 
-## [19] Rcpp_0.12.0          testthat_1.0.2       knitr_1.13          
+##  [4] GEOquery_2.32.0      gridExtra_2.2.1      latticeExtra_0.6-28 
+##  [7] RColorBrewer_1.1-2   lattice_0.20-33      hgu133plus2.db_3.0.0
+## [10] org.Hs.eg.db_3.0.0   RSQLite_1.0.0        DBI_0.4-1           
+## [13] AnnotationDbi_1.28.2 GenomeInfoDb_1.2.5   IRanges_2.0.1       
+## [16] S4Vectors_0.4.0      BioQC_1.02.1         Biobase_2.26.0      
+## [19] BiocGenerics_0.12.1  Rcpp_0.12.0          testthat_1.0.2      
+## [22] knitr_1.14          
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] bitops_1.0-6       caTools_1.17.1     crayon_1.3.1      
 ##  [4] digest_0.6.9       evaluate_0.9       formatR_1.4       
-##  [7] gdata_2.17.0       grid_3.1.3         gtools_3.5.0      
-## [10] highr_0.6          htmltools_0.3.5    KernSmooth_2.23-15
-## [13] magrittr_1.5       memoise_1.0.0      R6_2.1.2          
-## [16] RCurl_1.95-4.8     rmarkdown_1.0      stringi_1.0-1     
-## [19] stringr_1.0.0      tools_3.1.3        XML_3.98-1.3      
-## [22] yaml_2.1.13
+##  [7] gdata_2.17.0       grid_3.1.3         gtable_0.2.0      
+## [10] gtools_3.5.0       highr_0.6          htmltools_0.3.5   
+## [13] KernSmooth_2.23-15 magrittr_1.5       memoise_1.0.0     
+## [16] R6_2.1.3           RCurl_1.95-4.8     rmarkdown_1.0     
+## [19] stringi_1.0-1      stringr_1.1.0      tools_3.1.3       
+## [22] XML_3.98-1.3       yaml_2.1.13
 ```
