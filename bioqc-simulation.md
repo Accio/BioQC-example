@@ -69,21 +69,21 @@ The *BioQC* implementation is more than 500 times much faster: while it takes ab
 <p class="caption">Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server.</p>
 </div>
 
-The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes     only once for each gene set, independent of how many samples are tested.
+The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes only once for each gene set, independent of how many samples are tested.
 
-In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is          negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the     time- and memory-efficiency.
+In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the time- and memory-efficiency.
 
-Putting these tweaks together, *BioQC* achieves identical results as the native implementation with two order of magnitude less time. This    renders *BioQC*~an highly efficient tool for quality control of large-scale high-throughput gene expression data.
+Putting these tweaks together, *BioQC* achieves identical results as the native implementation in two orders of magnitude less time. This    renders *BioQC* a highly efficient tool for quality control of large-scale high-throughput gene expression data.
 
 
 
 Sensitivity Benchmark
 ---------------------
-We next asked the question how sensitive is *BioQC* to expression changes of tissue signature genes. Similar to the previous simulation,      while keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
+We next asked the question how sensitive *BioQC* is to expression changes of tissue signature genes. Similar to the previous simulation, we create random expression matrices. While keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
 
 <div class="figure" style="text-align: center">
-<img src="bioqc-simulation_files/figure-html/sensitivity_benchmark_fig-1.svg" alt="Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values." style="display:block; margin: auto" />
-<p class="caption">Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values.</p>
+<img src="bioqc-simulation_files/figure-html/sensitivity_benchmark_fig-1.svg" alt="Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all 155 signatures plotted against the difference in mean expression values." style="display:block; margin: auto" />
+<p class="caption">Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all 155 signatures plotted against the difference in mean expression values.</p>
 </div>
 
 
@@ -106,7 +106,7 @@ Given the expression profile of a sample of tissue A ($\mathbf{Y}_A$), and that 
 
 ### Dataset selection and quality control
 
-In order to avoid over-fitting of signatures derived from human expression data, we decided to use a normal tissue expression dataset from a non-      human mammal species, because it has been shown that tissue-preferential expression patterns tend to be conserved between mammal species. We           identified a dataset of *Canis lupus familiaris* (dog), which is publicly available in Gene Expression Omnibus ([GDS4164](http://www.ncbi.nlm.nih.  gov/sites/GDSbrowser?acc=GDS4164)).
+In order to avoid over-fitting of signatures derived from human expression data, we decided to use a normal tissue expression dataset from a non-human mammal species, because it has been shown that tissue-preferential expression patterns tend to be conserved between mammal species. We           identified a dataset of *Canis lupus familiaris* (dog), which is publicly available in Gene Expression Omnibus ([GDS4164](http://www.ncbi.nlm.nih.  gov/sites/GDSbrowser?acc=GDS4164)).
 
 In this study, the authors examined 39 samples from 10 pathologically normal tissues (liver, kidney, heart, lung, brain, lymph node, spleen, jejunum,  pancreas, and skeletal muscle) of four dogs (with one pancreas sample missing). We downloaded the data, and performed minimal pre-processing: for multiple probesets that map to same genes, we kept the one with the highest average expression level and removed the rest. The resulting dataset contained expression of 16797 genes. BioQC was applied to the dataset to test whether there are major contamination issues. The results, including tissues reported by the authors, and the BioQC tissue signatures with the highest and second-highest scores, are reported in the following table: 
 
@@ -155,7 +155,7 @@ GSM502609   Spleen           Monocytes                 Lymphocyte_B_FOLL
 GSM502610   Spleen           Monocytes                 Erythroid_cells     
 GSM502611   Spleen           Monocytes                 Myeloblast          
 
-By comparing the tissue labels provided by the authors and the predictions of *BioQC*, we notice that in most cases the two match well        (despite of ontological differences). In three cases (sample ID GSM502573, GSM502594, and GSM502596) though there seem to be intriguing differences, which might be explained by different sampling procedures or immune cell infiltration. We will however in this vignette not further explore them. These three samples are removed from the simulation procedures.
+By comparing the tissue labels provided by the authors and the predictions of *BioQC*, we notice that in most cases the two match well        (despite of ontological differences). In three cases (sample ID GSM502573, GSM502594, and GSM502596) though, there seem to be intriguing differences, which might be explained by different sampling procedures or immune cell infiltration. We will however in this vignette not further explore them. These three samples are removed from the simulation procedures.
 
 
 ### An example of weighted mixing: heart and jejunum

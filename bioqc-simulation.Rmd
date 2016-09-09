@@ -174,19 +174,19 @@ grid.arrange(timeXY, timeFactorBar, ncol=2)
 
 ```
 
-The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes     only once for each gene set, independent of how many samples are tested.
+The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes only once for each gene set, independent of how many samples are tested.
 
-In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is          negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the     time- and memory-efficiency.
+In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the time- and memory-efficiency.
 
-Putting these tweaks together, *BioQC* achieves identical results as the native implementation with two order of magnitude less time. This    renders *BioQC*~an highly efficient tool for quality control of large-scale high-throughput gene expression data.
+Putting these tweaks together, *BioQC* achieves identical results as the native implementation in two orders of magnitude less time. This    renders *BioQC* a highly efficient tool for quality control of large-scale high-throughput gene expression data.
 
 
 
 Sensitivity Benchmark
 ---------------------
-We next asked the question how sensitive is *BioQC* to expression changes of tissue signature genes. Similar to the previous simulation,      while keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
+We next asked the question how sensitive *BioQC* is to expression changes of tissue signature genes. Similar to the previous simulation, we create random expression matrices. While keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
 
-```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all `r length(gmt)` signatures plotted against the difference in mean expression values."}
+```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=3, dev='svg', fig.cap=sprintf("Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all %s signatures plotted against the difference in mean expression values.", length(gmt))}
 randomMatrixButOneSignature <- function(rows=humanGenes, signatureGenes,
                                         amplitudes=seq(0, 3, by=0.5)) {
   nrow <- length(rows)
@@ -245,10 +245,8 @@ senseRankDot <- dotplot(senseRank~senseAmplitudes, horizontal=FALSE,
 
 sensePlot <- senseBW + senseDot
 senseRankPlot <- senseRankBW + senseRankDot
-trellis.par.set(op)
-print(sensePlot, pos=c(0, 0, 0.5, 1), more=TRUE)
-print(senseRankPlot, pos=c(0.5, 0, 1, 1), more=FALSE)
 
+grid.arrange(sensePlot, senseRankPlot, ncol=2)
 ``` 
 
 
@@ -306,7 +304,7 @@ dogTable <- data.frame(Label=dog$Label,
 
 ### Dataset selection and quality control
 
-In order to avoid over-fitting of signatures derived from human expression data, we decided to use a normal tissue expression dataset from a non-      human mammal species, because it has been shown that tissue-preferential expression patterns tend to be conserved between mammal species. We           identified a dataset of *Canis lupus familiaris* (dog), which is publicly available in Gene Expression Omnibus ([GDS4164](http://www.ncbi.nlm.nih.  gov/sites/GDSbrowser?acc=GDS4164)).
+In order to avoid over-fitting of signatures derived from human expression data, we decided to use a normal tissue expression dataset from a non-human mammal species, because it has been shown that tissue-preferential expression patterns tend to be conserved between mammal species. We           identified a dataset of *Canis lupus familiaris* (dog), which is publicly available in Gene Expression Omnibus ([GDS4164](http://www.ncbi.nlm.nih.  gov/sites/GDSbrowser?acc=GDS4164)).
 
 In this study, the authors examined 39 samples from 10 pathologically normal tissues (liver, kidney, heart, lung, brain, lymph node, spleen, jejunum,  pancreas, and skeletal muscle) of four dogs (with one pancreas sample missing). We downloaded the data, and performed minimal pre-processing: for multiple probesets that map to same genes, we kept the one with the highest average expression level and removed the rest. The resulting dataset contained expression of `r nrow(dog)` genes. BioQC was applied to the dataset to test whether there are major contamination issues. The results, including tissues reported by the authors, and the BioQC tissue signatures with the highest and second-highest scores, are reported in the following table: 
 
@@ -314,12 +312,13 @@ In this study, the authors examined 39 samples from 10 pathologically normal tis
 kable(dogTable, caption="Quality control of the mixing benchmark input data with *BioQC*. Four columns (f.l.t.r.): sample index; tissue         reported by the authors; the tissue signature with the highest enrichment score reported by *BioQC*; the tissue signature with the second-   highest enrichment score.")
 ``` 
 
-By comparing the tissue labels provided by the authors and the predictions of *BioQC*, we notice that in most cases the two match well        (despite of ontological differences). In three cases (sample ID GSM502573, GSM502594, and GSM502596) though there seem to be intriguing differences, which might be explained by different sampling procedures or immune cell infiltration. We will however in this vignette not further explore them. These three samples are removed from the simulation procedures.
+By comparing the tissue labels provided by the authors and the predictions of *BioQC*, we notice that in most cases the two match well        (despite of ontological differences). In three cases (sample ID GSM502573, GSM502594, and GSM502596) though, there seem to be intriguing differences, which might be explained by different sampling procedures or immune cell infiltration. We will however in this vignette not further explore them. These three samples are removed from the simulation procedures.
 
 
 ### An example of weighted mixing: heart and jejunum
 
-As an example, we take average expression of heart and jejunum samples, and mix them by different compositions.
+As an example, we take average expression of heart and jejunum samples, and mix them by different compositions. 
+This allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*:
 
 ```{r hj_mix, echo=FALSE}
 heart <- rowMeans(exprs(dog)[, dog$Label=="Heart"])
@@ -366,12 +365,11 @@ hjMixRankXY <- xyplot(EnrichScore ~ Prop, group=Tissue, data=hjMixDataRank, type
                       scales=list(tck=c(1,0), alternating=1L,
                                   x=list(at=mixPropsShow, labels=mixPropsShowLabels),
                                   y=list(log=2, at=c(1,2,3,4,6,10,25,50,100,150))))
-trellis.par.set(op)
-print(hjMixXY, pos=c(0,0,0.5,1), more=TRUE)
-print(hjMixRankXY, pos=c(0.5,0,1,1), more=FALSE)
+
+grid.arrange(hjMixXY, hjMixRankXY, ncol=2)
 ``` 
 
-The above figure \@ref(fig:hjMixVis) allows us comparing enrichment scores and their ranks when the expression profiles of heart and jejunum are mixed *in silico*. We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end, namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
+We observe that with as little as 5% contamination of heart tissue in jejunum samples (rightmost in the right panel), the rank of heart signature jumps from 34 to 9; 10% and 20% contamination will further enhance the rank to 4 and 3 respectively. If we start from the other end, namely assuming jejunum contamination in heart samples, the BioQC algorithms ranks jejunum the 7th only when there are more than 25% contamination. If we set enrichment score equal or over 3 as the threshold of calling a suspected contamination event ($p<0.001$ in the one-sided Wilcoxon-Mann-Whitney test), it takes about 10% heart in jejunum tissue or about 30% jejunum tissue in heart to make a call. It means the sensitivity of contamination detection is not symmetric between tissues: contamination by tissues with distinct expression patterns (such as heart) are easier to be  detected than contamination by tissues with less distinct expression patterns (such as small intestine).
 
 While it is difficult to quantify the absolute sensitivity of contamination detection, it is apparent that if the enrichment score of a unforeseen tissue is very high (or ranked high), one may suspect potential contamination. Also, if there are replicates of samples from the same tissue, a        higher value in one sample compared with the other samples suggests a contamination or infiltration incident.
 
