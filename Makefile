@@ -3,8 +3,8 @@ R=R
 all:bioqc-kidney.html bioqc-simulation.html
 
 clean:
-	rm -f *.html
-	rm -f *.md 
+	rm -f bioqc-kidney.html bioqc-simulation.html
+	rm -f bioqc-kidney.md bioqc-simulation.md
 	rm -rf *_files
 	rm -rf *_cache
 
