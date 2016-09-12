@@ -1,4 +1,7 @@
-svgfilter=sed -i -r 's/"(.+)\.svg"/"https:\/\/cdn.rawgit.com\/grst\/BioQC-example\/master\/\1\.svg"/g'
+## Github does not render svg files in .md documents. We use the rawgit.com service
+## to serve the svg files with the correct content-type header and display them
+## within the markdown documents
+svgfilter=sed -i -r 's/"(.+)\.svg"/"https:\/\/cdn.rawgit.com\/accio\/BioQC-example\/master\/\1\.svg"/g'
 
 all:bioqc-kidney.html bioqc-simulation.html
 
