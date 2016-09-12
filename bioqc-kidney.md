@@ -65,7 +65,7 @@ system.time(bioqcRes <- wmwTest(eset, gmt,
 
 ```
 ##    user  system elapsed 
-##   1.910   0.010   1.919
+##   1.837   0.016   1.852
 ```
 
 The function returns *one-sided* $p$-values of Wilcoxon-Mann-Whitney test. We next visualize this metric after transformation.
@@ -88,7 +88,7 @@ heatmap(bioqcAbsLogRes, Colv=NA, Rowv=TRUE,
 ```
 
 <div class="figure" style="text-align: center">
-<img src="bioqc-kidney_files/figure-html/heatmap-1.svg" alt="BioQC scores (defined as abs(log10(p))) of the samples visualized in heatmap. Red and blue indicate high and low scores respectively." style="display:block; margin: auto" />
+<img src="https://cdn.rawgit.com/grst/BioQC-example/master/bioqc-kidney_files/figure-html/heatmap-1.svg" alt="BioQC scores (defined as abs(log10(p))) of the samples visualized in heatmap. Red and blue indicate high and low scores respectively." style="display:block; margin: auto" />
 <p class="caption">BioQC scores (defined as abs(log10(p))) of the samples visualized in heatmap. Red and blue indicate high and low scores respectively.</p>
 </div>
 
@@ -102,7 +102,7 @@ matplot(t(filRes), pch=c("K", "P"), type="b", lty=1L,
 ```
 
 <div class="figure" style="text-align: center">
-<img src="bioqc-kidney_files/figure-html/vis_bioqc-1.svg" alt="BioQC scores (defined as abs(log10(p))) of the samples. K and P represent kidney and pancreas signature scores respectively." style="display:block; margin: auto" />
+<img src="https://cdn.rawgit.com/grst/BioQC-example/master/bioqc-kidney_files/figure-html/vis_bioqc-1.svg" alt="BioQC scores (defined as abs(log10(p))) of the samples. K and P represent kidney and pancreas signature scores respectively." style="display:block; margin: auto" />
 <p class="caption">BioQC scores (defined as abs(log10(p))) of the samples. K and P represent kidney and pancreas signature scores respectively.</p>
 </div>
 
@@ -130,7 +130,7 @@ text(pancreasScore[23:25],elastase[23:25], 23:25, pos=1)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="bioqc-kidney_files/figure-html/rt_pcr_result-1.svg" alt="Correlation between qRT-PCR results and BioQC pancreas score" style="display:block; margin: auto" />
+<img src="https://cdn.rawgit.com/grst/BioQC-example/master/bioqc-kidney_files/figure-html/rt_pcr_result-1.svg" alt="Correlation between qRT-PCR results and BioQC pancreas score" style="display:block; margin: auto" />
 <p class="caption">Correlation between qRT-PCR results and BioQC pancreas score</p>
 </div>
 
@@ -183,7 +183,7 @@ with(esetNephTbl, points(Contam.logFC[isDiff]~ExclContam.logFC[isDiff], pch=16, 
 ```
 
 <div class="figure" style="text-align: center">
-<img src="bioqc-kidney_files/figure-html/deg-1.svg" alt="Log2 fold change (logFC) values reported by *limma* with one contaminated sample included (y-axis) or excluded (x-axis). Genes strongly affected by the contamination are indicated by red dots." style="display:block; margin: auto" />
+<img src="https://cdn.rawgit.com/grst/BioQC-example/master/bioqc-kidney_files/figure-html/deg-1.svg" alt="Log2 fold change (logFC) values reported by *limma* with one contaminated sample included (y-axis) or excluded (x-axis). Genes strongly affected by the contamination are indicated by red dots." style="display:block; margin: auto" />
 <p class="caption">Log2 fold change (logFC) values reported by *limma* with one contaminated sample included (y-axis) or excluded (x-axis). Genes strongly affected by the contamination are indicated by red dots.</p>
 </div>
 
