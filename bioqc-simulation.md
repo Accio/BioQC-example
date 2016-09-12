@@ -232,14 +232,14 @@ Appendix
 ========
 
 ### Comparing BioQC with Principal Component Analysis (PCA)
-In the context of the dog transcriptome dataset, we can compare the results of principal component analysis (PCA), with that of *BioQC*:
+In the context of the dog transcriptome dataset, we can compare the results of principal component analysis (PCA) with that of *BioQC*:
 
 <div class="figure" style="text-align: center">
 <img src="bioqc-simulation_files/figure-html/pca-1.svg" alt="Sample separation revealed by principal component analysis (PCA) of the dog transcriptome dataset." style="display:block; margin: auto" />
 <p class="caption">Sample separation revealed by principal component analysis (PCA) of the dog transcriptome dataset.</p>
 </div>
 
-PCA sugggests that samples from each tissue tend to cluster together, in line with the *BioQC* results. In addition, PCA reveals that         tissues with cells of similar origins cluster together, such as skeletal muscle and heart. As expected, one brain sample and two lung samples seem to be different from other samples of the same cluster, which are consistent with the *BioQC* findings; however, unlike BioQC, PCA does not      provide information on what are potential contamination/infiltration casues.
+PCA sugggests that samples from each tissue tend to cluster together, in line with the *BioQC* results. In addition, PCA reveals that tissues with cells of similar origins cluster together, such as skeletal muscle and heart. As expected, one brain sample and two lung samples seem to be different from other samples of the same cluster, which are consistent with the *BioQC* findings; however, unlike BioQC, PCA does not provide information on what are potential contamination/infiltration casues.
 
 Therefore, we believe *BioQC* complements existing unsupervised methods to inspect quality of gene expression data.
 
@@ -281,12 +281,12 @@ sessionInfo()
 ## [22] knitr_1.14          
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] bitops_1.0-6       caTools_1.17.1     crayon_1.3.1      
-##  [4] digest_0.6.9       evaluate_0.9       formatR_1.4       
-##  [7] gdata_2.17.0       grid_3.1.3         gtable_0.2.0      
-## [10] gtools_3.5.0       highr_0.6          htmltools_0.3.5   
-## [13] KernSmooth_2.23-15 magrittr_1.5       memoise_1.0.0     
-## [16] R6_2.1.3           RCurl_1.95-4.8     rmarkdown_1.0     
-## [19] stringi_1.0-1      stringr_1.1.0      tools_3.1.3       
-## [22] XML_3.98-1.3       yaml_2.1.13
+##  [1] bitops_1.0-6       caTools_1.17.1     codetools_0.2-14  
+##  [4] crayon_1.3.1       digest_0.6.9       evaluate_0.9      
+##  [7] formatR_1.4        gdata_2.17.0       grid_3.1.3        
+## [10] gtable_0.2.0       gtools_3.5.0       highr_0.6         
+## [13] htmltools_0.3.5    KernSmooth_2.23-15 magrittr_1.5      
+## [16] memoise_1.0.0      R6_2.1.3           RCurl_1.95-4.8    
+## [19] rmarkdown_1.0      stringi_1.0-1      stringr_1.1.0     
+## [22] tools_3.1.3        XML_3.98-1.3       yaml_2.1.13
 ```

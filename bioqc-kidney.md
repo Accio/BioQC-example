@@ -65,7 +65,7 @@ system.time(bioqcRes <- wmwTest(eset, gmt,
 
 ```
 ##    user  system elapsed 
-##   1.497   0.012   1.509
+##   1.910   0.010   1.919
 ```
 
 The function returns *one-sided* $p$-values of Wilcoxon-Mann-Whitney test. We next visualize this metric after transformation.
@@ -235,11 +235,11 @@ sessionInfo()
 ## other attached packages:
 ## [1] limma_3.22.7        RColorBrewer_1.1-2  BioQC_1.02.1       
 ## [4] Biobase_2.26.0      BiocGenerics_0.12.1 Rcpp_0.12.0        
-## [7] knitr_1.13         
+## [7] knitr_1.14         
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] digest_0.6.9       evaluate_0.9       formatR_1.4       
 ##  [4] highr_0.6          htmltools_0.3.5    KernSmooth_2.23-15
 ##  [7] magrittr_1.5       rmarkdown_1.0      stringi_1.0-1     
-## [10] stringr_1.0.0      tools_3.1.3        yaml_2.1.13
+## [10] stringr_1.1.0      tools_3.1.3        yaml_2.1.13
 ```
