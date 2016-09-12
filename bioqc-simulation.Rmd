@@ -535,7 +535,7 @@ Apart from that, most *in silico* contamination events are detectable in this da
 
 Conclusions
 ===========
-Benchmark studies with similated and real-world data demonstrate that *BioQC* is an efficient and sensitive method to detect tissue            heterogeneity from high-throughput gene expression data.
+Benchmark studies with similated and real-world data demonstrate that *BioQC* is an efficient and sensitive method to detect tissue heterogeneity from high-throughput gene expression data.
 
 
 Appendix
