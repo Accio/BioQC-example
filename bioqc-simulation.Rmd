@@ -15,7 +15,7 @@ opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="cente
 
 In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code used to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
-*BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an      efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
+*BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
 
 
 Experiment setup
@@ -542,7 +542,7 @@ Appendix
 ========
 
 ### Comparing BioQC with Principal Component Analysis (PCA)
-In the context of the dog transcriptome dataset, we can compare the results of principal component analysis (PCA), with that of *BioQC*:
+In the context of the dog transcriptome dataset, we can compare the results of principal component analysis (PCA) with that of *BioQC*:
 
 ```{r pca, echo=FALSE, fig.width=6, fig.height=6, dev='svg', fig.cap="Sample separation revealed by principal component analysis (PCA) of the dog transcriptome dataset."}
 par(mar=c(4,4,2,2))
@@ -555,7 +555,7 @@ biplot(dogPCA, col=c("#335555dd", "transparent"), cex=1.15,
 
 ```
 
-PCA sugggests that samples from each tissue tend to cluster together, in line with the *BioQC* results. In addition, PCA reveals that         tissues with cells of similar origins cluster together, such as skeletal muscle and heart. As expected, one brain sample and two lung samples seem to be different from other samples of the same cluster, which are consistent with the *BioQC* findings; however, unlike BioQC, PCA does not      provide information on what are potential contamination/infiltration casues.
+PCA sugggests that samples from each tissue tend to cluster together, in line with the *BioQC* results. In addition, PCA reveals that tissues with cells of similar origins cluster together, such as skeletal muscle and heart. As expected, one brain sample and two lung samples seem to be different from other samples of the same cluster, which are consistent with the *BioQC* findings; however, unlike BioQC, PCA does not provide information on what are potential contamination/infiltration casues.
 
 Therefore, we believe *BioQC* complements existing unsupervised methods to inspect quality of gene expression data.
 

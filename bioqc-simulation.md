@@ -6,7 +6,7 @@ Supplementary Information for "Detect issue heterogenity in gene expression data
 
 In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code used to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
-*BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an      efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
+*BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
 
 
 Experiment setup
@@ -187,11 +187,11 @@ Following the heart-jejunum example, we performed all 45 pairwise mixing experim
 
 
 
-The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (0.15) means that if there are 15% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 3 of all tissue signatures.
+The heatmap visualization summarizes the detection limit of contamination of each pair of tissues. Take the cell in row 1 column 2 from top left: its  value (0.15) means that if there are 15% or more contamination by heart in the brain sample, *BioQC* will be able to detect it (with the threshold enrichment score $\geqslant3$ or the rank $\leqslant10$), because the enrichment score is equal to or larger than 3, or the heart tissue signature ranks in the top 10 of all tissue signatures.
 
-Take another cell in row 2 column 1 from top left: its value (0.5) means that if there are 50% or more contanmination by brain in a heart sample, *BioQC* will be able to detect it. Here we observe the asymmetry again that we observed before with the heart/jejenum example: while it is relative easy to identify heart contamination of a brain sample, it is more difficult to identify brain contamination of a heart sample in this dataset.
+Take another cell in row 2 column 1 from top left: its value (0.5) means that if there are 50% or more contanmination by brain in a heart sample, *BioQC* will be able to detect it. Here we observe the asymmetry again that we observed before with the heart/jejenum example: while it is realtively easy to identify heart contamination of a brain sample, it is more difficult to identify brain contamination of a heart sample in this dataset.
 
-The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the figure "pairwise_mix" except for diagonal and missing elements.
+The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the heatmap, except for diagonal and missing elements.
 
 
 Table: Median lower detection limites of tissues as contamination sources.
@@ -209,14 +209,16 @@ Pancreas         17.22%
 SkeletalMuscle   15.00%               
 Spleen           13.57%               
 
-Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are 22 distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes (fig:brain). Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets.
+Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are 22 distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes:  
 
 <div class="figure" style="text-align: center">
 <img src="bioqc-simulation_files/figure-html/brain_low_exp-1.svg" alt="Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest." style="display:block; margin: auto" />
 <p class="caption">Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest.</p>
 </div>
 
-Otherwise, most *in silico* contamination events are detectable in this dataset, with median detection limit around 0.2. This suggests that *BioQC* is sensitive towards tissue heterogeneity in physiological settings.
+Therefore only a strong contamination by brain in this dataset will be detected by the given threshold. We expect that if prefrontal cortex instead of cerebrum sample was profiled, the mixing profile of brain will be similar to other organs. This needs to be tested in other datasets. 
+
+Apart from that, most *in silico* contamination events are detectable in this dataset, with median detection limit around 0.2. This suggests that *BioQC* is sensitive towards tissue heterogeneity in physiological settings.
 
 
 
