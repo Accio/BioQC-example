@@ -3,10 +3,10 @@ R=R
 all:bioqc-kidney.html bioqc-simulation.html
 
 clean:
-	rm -f bioqc-kidney.html bioqc-simulation.html
-	rm -f bioqc-kidney.md bioqc-simulation.md
-	rm -rf *_files
-	rm -rf *_cache
+	rm -fv bioqc-kidney.html bioqc-simulation.html
+	rm -fv bioqc-kidney.md bioqc-simulation.md
+	rm -rfv *_files
+	rm -rfv *_cache
 
 bioqc-simulation.html:bioqc-simulation.Rmd
 	 Rscript -e "rmarkdown::render('bioqc-simulation.Rmd')"
