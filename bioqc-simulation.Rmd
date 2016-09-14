@@ -1,8 +1,9 @@
 ---
 title: "BioQC-benchmark: Testing Efficiency, Sensitivity and Specificity of BioQC on simulated and real-world data"
 output: 
-  html_document: 
-    keep_md: yes
+  md_document:
+    variant: markdown_phpextra
+    preserve_yaml: TRUE
 ---
 Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling and [Laura Badi](laura.badi@roche.com))
 
