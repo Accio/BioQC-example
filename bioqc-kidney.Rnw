@@ -92,7 +92,7 @@ The dataset contains expression of \Sexpr{nrow(eset)} genes in \Sexpr{ncol(eset)
 Next we run the core function of the \Rpackage{BioQC} package, \Rfunction{wmwTest}, to perform the analysis.
 <<runBioQC>>=
 system.time(bioqcRes <- wmwTest(eset, gmt, 
-                                alternative="greater"))
+                                valType="p.greater"))
 @ 
 
 The function returns \textit{one-sided} \textit{p}-values of Wilcoxon-Mann-Whitney test. We next visualize this metric after transformation.

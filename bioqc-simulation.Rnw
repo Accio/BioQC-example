@@ -148,7 +148,7 @@ if(!file.exists(benchmarkFile)) {
     bioqcRes <- lapply(tmRandomMats, function(mat) {
                        bench <- benchmark(wmwTestRes<- wmwTest(mat, 
                                                                tissueInds, 
-                                                               alternative="greater"),
+                                                               valType="p.greater"),
                                           replications=noBenchRep)
                        elapTime <- c("elapsed"=bench$elapsed,
                                      "user"=bench$user.self,
@@ -273,7 +273,7 @@ senseAmplitudes <- rep(c(seq(0, 1, by=0.25),
 senseMat <- randomMatrixButOneSignature(rows=humanGenes,
                                         signatureGenes=selSignature,
                                         amplitudes=senseAmplitudes)
-senseBioQC <- wmwTest(senseMat, tissueInds, alternative="greater")
+senseBioQC <- wmwTest(senseMat, tissueInds, valType="p.greater")
 senseRank <- apply(senseBioQC, 2, function(x) rank(x)[selGeneSet])
 mydot <- function(x,y,abline=1,...) {panel.abline(h=abline, col="darkgray");panel.dotplot(x,y,...)}
 senseBW <- bwplot(-log10(senseBioQC[selGeneSet,])~senseAmplitudes, horizontal=FALSE,
@@ -346,7 +346,7 @@ if(!file.exists(dogfile)) {
     load(dogfile)
 }
 dogInds <- sapply(gmt, function(x) match(x$genes, fData(dog)$GeneSymbol))
-dogBioQC <- wmwTest(dog, gmt, alternative="greater")
+dogBioQC <- wmwTest(dog, gmt, valType="p.greater")
 dogEnrich <- absLog10p(dogBioQC)
 dogEnrich.best <- apply(dogEnrich,2, which.max)
 dogEnrich.second <- apply(dogEnrich,2, function(x) which(rank(-x)==2))
@@ -392,7 +392,7 @@ linearMix <- function(vec1, vec2, prop2=0) {
 mixProps <- seq(0, 1, 0.05)
 mixPropsLabels <- sprintf("%d%%", mixProps*100)
 hjMix <- sapply(mixProps, function(x) linearMix(jejunum, heart, x))
-hjMixBioQC <- wmwTest(hjMix, dogInds, alternative="greater")
+hjMixBioQC <- wmwTest(hjMix, dogInds, valType="p.greater")
 hjMixSub <- hjMixBioQC[c("Intestine_small_NR_0.7_3","Muscle_cardiac_NR_0.7_3"),]
 hjMixSubEnrich <- absLog10p(hjMixSub)
 hjMixBioQCrank <- apply(hjMixBioQC, 2, function(x) rank(x))
@@ -464,7 +464,7 @@ dogPairwise <- apply(dogComb, 1, function(x) {
                          label1 <- dogLabels[x[1]]
                          label2 <- dogLabels[x[2]]
                          mix <- sapply(mixProps, function(x) linearMix(vec1, vec2, x))
-                         bioqc <- wmwTest(mix, dogInds, alternative="greater")
+                         bioqc <- wmwTest(mix, dogInds, valType="p.greater")
                          ranks <- apply(bioqc, 2, rank)
                          enrich <- absLog10p(bioqc)
                          colnames(enrich) <- colnames(ranks) <- mixPropsLabels
