@@ -1,15 +1,13 @@
 # Case studies of BioQC
-Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*](https://github.com/Accio/BioQC)"
 
 Contact: [Jitao David Zhang] (mailto:jitao_david.zhang@roche.com?subject=BioQC-example)
 
-
 ## Simulation studies
 
-[bioqc-simulation.Rmd] (bioqc-simulation.md): Benchmarking Efficiency, Sensitivity and Specificity of BioQC on simulated and real-world data. 
+[bioqc-simulation.Rnw] (https://github.com/Accio/BioQC-example/blob/master/bioqc-simulation.Rnw): The BioQC algorithm applied to simulated datasets.
 
 ## The kidney example
 
-[bioqc-kidney.Rmd] (bioqc-kidney.md): Applying BioQC to a real-world expression profiling dataset 
+[bioqc-kidney.Rnw] (https://github.com/Accio/BioQC-example/blob/master/bioqc-kidney.Rnw): The BioQC algorithm applied to a real expression profiling dataset
 
 
