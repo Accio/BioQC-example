@@ -1,15 +1,14 @@
-all:bioqc-kidney.pdf bioqc-simulation.pdf
+all:bioqc-kidney.html bioqc-simulation.html
 
-bioqc-simulation.pdf:bioqc-simulation.tex
-	pdflatex bioqc-simulation.tex
-	pdflatex bioqc-simulation.tex
+clean:
+	rm -fv bioqc-kidney.html bioqc-simulation.html
+	rm -fv bioqc-kidney.md bioqc-simulation.md
+	rm -rfv *_files
+	rm -rfv *_cache
 
-bioqc-simulation.tex:bioqc-simulation.Rnw
-	R CMD Sweave bioqc-simulation.Rnw
+bioqc-simulation.html:bioqc-simulation.Rmd
+	Rscript -e "rmarkdown::render('bioqc-simulation.Rmd', output_format='all')"
 
-bioqc-kidney.pdf:bioqc-kidney.tex
-	pdflatex bioqc-kidney.tex
-	pdflatex bioqc-kidney.tex
+bioqc-kidney.html:bioqc-kidney.Rmd
+	Rscript -e "rmarkdown::render('bioqc-kidney.Rmd', output_format='all')"
 
-bioqc-kidney.tex:bioqc-kidney.Rnw
-	R CMD Sweave bioqc-kidney.Rnw
