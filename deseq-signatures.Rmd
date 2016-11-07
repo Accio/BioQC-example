@@ -1,0 +1,47 @@
+```{r}
+library(DESeq2)
+library(readr)
+library(testthat)
+library(ribiosUtils)
+library(edgeR)
+library(ribiosIO)
+```
+
+```{r DESeq}
+gct = read_gct_matrix("GTEX_v6/GTEx_Analysis_v6_RNA-seq_RNA-SeQCv1.1.8_gene_reads.gct")
+annotation = read_tsv("GTEx-UDISDataSetID5681-sampleAnnotation.txt")
+annotation.tissue = read_tsv("GTEX_v6/v6_UDIS.txt")
+ids = colnames(gct)
+annotation.matched = matchColumn(ids, annotation, "Experiment name")
+annotation.tissue.matched = matchColumn(ids, annotation.tissue, "SAMPID")
+
+colData = cbind(annotation.matched, annotation.tissue.matched)
+rownames(colData) = colData[["Experiment name"]]
+# write_tsv(data.frame(countData), path="~/tmp/gtex/count.mat.tsv")
+# write.table(colData[,c("Experiment name", "RIN", "Gender", "SMTS")], file="designMatrix.tab")
+
+dds = DESeqDataSetFromMatrix(countData = gct,
+                      colData = colData,
+                      design = ~SMTS + Gender + RIN)
+
+dsr = DESeq(dds)
+
+
+```
+
+```{r edgeR}
+dgList = DGEList(counts=gct, genes=rownames(gct))
+
+dgList <- estimateGLMCommonDisp(dgList, design=designMat)
+dgList <- estimateGLMTrendedDisp(dgList, design=designMat)
+dgList <- estimateGLMTagwiseDisp(dgList, design=designMat)
+
+
+designMat = model.matrix(~colData$SMTS + colData$RIN + colData$Gender)
+
+fit = glmFit(dgList, designMat)
+```
+
+Speedup: 
+filter by cpm
+limma voom 
