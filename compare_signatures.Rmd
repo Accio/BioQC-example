@@ -1,16 +1,31 @@
-```{r libs}
+---
+title: Compare Signatures derived from GTEx with BioQC
+output:
+  html_document: default
+---
+
+Here, we compare the overlap of the signatures derived from GTEx in an earlier step with those from BioQC derived with Gini index.
+
+
+```{r libs, include=FALSE}
 library(ribiosUtils)
 libordie(BioQC)
+libordie(gridExtra)
 libordie(VennDiagram)
+libordie(ggplot2)
+libordie(reshape2)
+libordie(RColorBrewer)
+libordie(stringr)
+options(fig_caption=TRUE)
+library(knitr)
+opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="center") 
 ```
 
-```{r comp}
-load("gtex_signatures.Rdata")
-gmtFile = system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt", package="BioQC")
-gmt <- readGmt(gmtFile)
-
+### Define functions and load data
+```{r set_functions}
+# functions for comparing sets. 
 intersectSigs = function(sigGmt, sigGtex) {
-  gmtGenes = gmt[[sigGmt]]$genes
+  gmtGenes = bioqc[[sigGmt]]$genes
   gtexGenes = signatures[[sigGtex]]
   return(c(length(gmtGenes), length(gtexGenes), length(intersect(gmtGenes, gtexGenes))))
 }
@@ -25,36 +40,111 @@ drawVenn = function(sigGmt, sigGtex) {
   plot.new()
   draw.pairwise.venn(is[1], is[2], is[3])
 }
+```
 
-jacc.mat = matrix(nrow=length(gmt),ncol=length(signatures),dimnames=list(names(gmt), names(signatures)))
+```{r load_data}
+# load signatures from BioQC
+load("gtex_signatures.Rdata")
+gmtFile = system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt", package="BioQC")
+bioqc <- readGmt(gmtFile)
+```
 
-for(i in 1:ncol(jacc.mat)) {
-  for(j in 1:nrow(jacc.mat)) {
-    jacc.mat[j,i] = jaccInd(names(gmt)[j], names(signatures)[i])
-  }
-}
-
-jm = melt(jacc.mat)
-colnames(jm) = c("BioQC", "GTEx", "jaccard_index")
-ord.gtex = hclust(t(dist(jacc.mat)))$ord
-ord.bioqc = hclust(dist(jacc.mat))$ord
-jm$BioQC = factor(jm$BioQC, levels = rownames(jacc.mat)[ord.bioqc])
-jm$GTEx = factor(jm$GTEx, levels = colnames(jacc.mat)[ord.gtex])
-
-hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')  
-
-
-ggplot(jm, aes(x=BioQC, y=GTEx)) + 
-  geom_tile(aes(fill=jaccard_index))+
-  scale_fill_gradientn(colours = hm.palette(100)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-length.bioqc = unlist(lapply(gmt, function(x) {return(length(x$genes))}))
+### Signature Length
+We compare the lengths of the signatures derived by the two methods. 
+```{r compare_signature_length, fig.width=8, fig.height=3, fig.cap="Left panel: boxplot comparing the signatures lengths of bioqc and gtex. Right panel: quantile-quantile plot for the same data."}
+length.bioqc = unlist(lapply(bioqc, function(x) {return(length(x$genes))}))
 length.gtex = unlist(lapply(signatures, length))
 box.data = rbind(
   data.frame(signature=rep("bioqc", length(length.bioqc)), length=length.bioqc),
   data.frame(signature=rep("gtex", length(length.gtex)), length=length.gtex))
 
-ggplot(box.data, aes(x=signature, y=length)) + geom_boxplot()
-qqplot(length.bioqc, length.gtex)
+boxp = ggplot(box.data, aes(x=signature, y=length)) + geom_boxplot()
+
+qqr = qqplot(length.bioqc, length.gtex, plot.it=FALSE)
+data = data.frame(bioqc=qqr$x, gtex=qqr$y)
+coef = coef(lm(data$gtex ~ data$bioqc))
+qqp = ggplot(data, aes(x=bioqc, y=gtex)) +
+            geom_abline(intercept=coef[1], slope=coef[2], color="grey") +
+            geom_point() 
+
+grid.arrange(boxp, qqp, ncol=2)
 ```
+
+### Compare the signature sets using jaccard index
+```{r jaccard_index, echo=FALSE, fig.width=8, fig.height=5, fig.cap="[enlarge figure](fig/jaccard-index.pdf)"}
+jacc.mat = matrix(nrow=length(bioqc),
+                  ncol=length(signatures),
+                  dimnames=list(names(bioqc), names(signatures)))
+
+for(i in 1:ncol(jacc.mat)) {
+  for(j in 1:nrow(jacc.mat)) {
+    jacc.mat[j,i] = jaccInd(names(bioqc)[j], names(signatures)[i])
+  }
+}
+
+jm = melt(jacc.mat)
+colnames(jm) = c("BioQC", "GTEx", "jaccard_index")
+
+# cluster signatures
+ord.gtex = hclust(t(dist(jacc.mat)))$ord
+ord.bioqc = hclust(dist(jacc.mat))$ord
+jm$BioQC = factor(jm$BioQC, levels = rownames(jacc.mat)[ord.bioqc])
+jm$GTEx = factor(jm$GTEx, levels = colnames(jacc.mat)[ord.gtex])
+
+make.plot = function() {
+  hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')  
+  return(ggplot(jm, aes(x=BioQC, y=GTEx)) + 
+    geom_tile(aes(fill=jaccard_index))+
+    scale_fill_gradientn(colours = hm.palette(100)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)))
+}
+
+pdf("fig/jaccard-index.pdf", width=25, height=10)
+print(make.plot())
+dev.off()
+
+# make heatmap. 
+print(make.plot() + theme(axis.text=element_text(size=6)))
+```
+
+It also suggests, that ngs signatures should not be applied on microarray data and vice versa. 
+Only NGS signatures: 
+```{r jaccard_ngs}
+jm = melt(jacc.mat[str_detect(rownames(jacc.mat), "NGS"),])
+colnames(jm) = c("BioQC", "GTEx", "jaccard_index")
+
+# cluster signatures
+ord.gtex = hclust(t(dist(jacc.mat)))$ord
+ord.bioqc = hclust(dist(jacc.mat))$ord
+jm$BioQC = factor(jm$BioQC, levels = rownames(jacc.mat[str_detect(rownames(jacc.mat), "NGS"),])[ord.bioqc])
+jm$GTEx = factor(jm$GTEx, levels = colnames(jacc.mat)[ord.gtex])
+
+make.plot = function() {
+  hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')  
+  return(ggplot(jm, aes(x=BioQC, y=GTEx)) + 
+    geom_tile(aes(fill=jaccard_index))+
+    scale_fill_gradientn(colours = hm.palette(100)) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)))
+}
+
+# make heatmap. 
+print(make.plot())
+```
+
+Some signature reproduce well, others don't.
+
+
+```{r write_gmt, include=FALSE}
+file.remove("gmt/gtex_signatures.gmt")
+for(signame in names(signatures)) {
+  sig = signatures[[signame]]
+  line = sprintf("GTEx_%s\tGTEx_limma\t%s", signame, str_c(sig, collapse="\t"))
+  write(line,file="gtex_signatures.gmt",append=TRUE)
+}
+```
+
+## R Session Info
+```{r session_info}
+sessionInfo()
+```
+
