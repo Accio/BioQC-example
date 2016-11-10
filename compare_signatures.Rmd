@@ -16,6 +16,7 @@ libordie(ggplot2)
 libordie(reshape2)
 libordie(RColorBrewer)
 libordie(stringr)
+libordie(MASS)
 options(fig_caption=TRUE)
 library(knitr)
 opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="center") 
@@ -24,19 +25,19 @@ opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="cente
 ### Define functions and load data
 ```{r set_functions}
 # functions for comparing sets. 
-intersectSigs = function(sigGmt, sigGtex) {
-  gmtGenes = bioqc[[sigGmt]]$genes
-  gtexGenes = signatures[[sigGtex]]
-  return(c(length(gmtGenes), length(gtexGenes), length(intersect(gmtGenes, gtexGenes))))
+intersectSigs = function(gmt1, gmt2, sig1, sig2) {
+  genes1 = gmt1[[sig1]]$genes
+  genes2 = gmt2[[sig2]]$genes
+  return(c(length(genes1), length(genes2), length(intersect(genes1, genes2))))
 }
 
-jaccInd = function(sigGmt, sigGtex) {
-  is = intersectSigs(sigGmt, sigGtex)
+jaccInd = function(gmt1, gmt2, sig1, sig2) {
+  is = intersectSigs(gmt1, gmt2, sig1, sig2)
   return(is[3]/(sum(is[1:2]) - is[3]))
 }
 
-drawVenn = function(sigGmt, sigGtex) {
-  is = intersectSigs(sigGmt, sigGtex)
+drawVenn = function(gmt1, gmt2, sig1, sig2) {
+  is = intersectSigs(gmt1, gmt2, sig1, sig2)
   plot.new()
   draw.pairwise.venn(is[1], is[2], is[3])
 }
@@ -44,104 +45,117 @@ drawVenn = function(sigGmt, sigGtex) {
 
 ```{r load_data}
 # load signatures from BioQC
-load("gtex_signatures.Rdata")
-gmtFile = system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt", package="BioQC")
-bioqc <- readGmt(gmtFile)
+bioqc = readGmt(system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt", package="BioQC"))
+gtex = readGmt("gmt/gtex_signatures.gmt")
+gtex.gini = readGmt("gmt/gtex_signatures_gini.gmt")
 ```
 
 ### Signature Length
 We compare the lengths of the signatures derived by the two methods. 
-```{r compare_signature_length, fig.width=8, fig.height=3, fig.cap="Left panel: boxplot comparing the signatures lengths of bioqc and gtex. Right panel: quantile-quantile plot for the same data."}
-length.bioqc = unlist(lapply(bioqc, function(x) {return(length(x$genes))}))
-length.gtex = unlist(lapply(signatures, length))
+```{r compare_signature_length, fig.width=8, fig.height=3, fig.cap="**Left**: boxplot comparing the signature lengths of BioQC, and the signature sets derived from GTEx with limma and gini-index respectively. **Middle, Right**: quantile-quantile plots of the lenghts of the BioQC signatures and the signatures sets derived from GTEx with limma and gini-index respectively."}
+sigLength = function(gmt) {
+  return(unlist(lapply(gmt, function(x) {return(length(x$genes))})))
+}
+gg_qq = function(data, x, y) {
+  qqr = qqplot(data[data[,1]==x,2], data[data[,1]==y,2], plot.it=FALSE)
+  data.2 = data.frame(x=qqr$x, y=qqr$y)
+  colnames(data.2) = c(x, y)
+  coef = coef(rlm(data.2[,2] ~ data.2[,1]))
+  return(ggplot(data.2, aes(x=get(x), y=get(y))) +
+              geom_abline(intercept=coef[1], slope=coef[2], color="grey") +
+              geom_point() + 
+              labs(x=x, y=y))
+}
+
+length.bioqc = sigLength(bioqc)
+length.gtex = sigLength(gtex)
+length.gtex.gini = sigLength(gtex.gini)
 box.data = rbind(
   data.frame(signature=rep("bioqc", length(length.bioqc)), length=length.bioqc),
-  data.frame(signature=rep("gtex", length(length.gtex)), length=length.gtex))
+  data.frame(signature=rep("gtex limma", length(length.gtex)), length=length.gtex),
+  data.frame(signature=rep("gtex gini", length(length.gtex.gini)), length=length.gtex.gini))
 
 boxp = ggplot(box.data, aes(x=signature, y=length)) + geom_boxplot()
+boxp = boxp + coord_cartesian(ylim = c(0, 2500))
 
-qqr = qqplot(length.bioqc, length.gtex, plot.it=FALSE)
-data = data.frame(bioqc=qqr$x, gtex=qqr$y)
-coef = coef(lm(data$gtex ~ data$bioqc))
-qqp = ggplot(data, aes(x=bioqc, y=gtex)) +
-            geom_abline(intercept=coef[1], slope=coef[2], color="grey") +
-            geom_point() 
-
-grid.arrange(boxp, qqp, ncol=2)
+grid.arrange(boxp, 
+             gg_qq(box.data, "bioqc", "gtex limma"), 
+             gg_qq(box.data, "bioqc", "gtex gini"), ncol=3)
 ```
+The signatures from GTEx appear to be substantially larger than the ones shipped with BioQC. Particularliy those generated with gini-index. Essentially, this boils down to a threshold problem. Adjusting the log-fold-change cutoff or the minimal required gini-index in `create_gtex_signatures.Rmd` has a direct impact on the signature sizes. The quantile-quantile plots indicate, that signatures grow linearely whith a less stringent threshold. 
+
 
 ### Compare the signature sets using jaccard index
-```{r jaccard_index, echo=FALSE, fig.width=8, fig.height=5, fig.cap="[enlarge figure](fig/jaccard-index.pdf)"}
-jacc.mat = matrix(nrow=length(bioqc),
-                  ncol=length(signatures),
-                  dimnames=list(names(bioqc), names(signatures)))
+```{r jaccard_index, results='hide', fig.width=8, fig.height=3, fig.cap="Heatmaps showing the jaccard index between the different signatures. Open the PDF files to see the figure with labels: [GTEx limma:GTEx gini](fig/jaccard_gtex-limma_gtex-gini.pdf), [GTEx limma:BioQC](fig/jaccard_gtex-limma_bioqc.pdf), [GTEx gini:BioQC](fig/jaccard_gtex-gini_bioqc.pdf)"}
+pairwiseJaccMat = function(gmt1, gmt2, name1, name2) { 
+  jacc.mat = matrix(nrow=length(gmt1),
+                  ncol=length(gmt2),
+                  dimnames=list(names(gmt1), names(gmt2)))
 
-for(i in 1:ncol(jacc.mat)) {
-  for(j in 1:nrow(jacc.mat)) {
-    jacc.mat[j,i] = jaccInd(names(bioqc)[j], names(signatures)[i])
+  for(i in 1:ncol(jacc.mat)) {
+    for(j in 1:nrow(jacc.mat)) {
+      jacc.mat[j,i] = jaccInd(gmt1, gmt2, names(gmt1)[j], names(gmt2)[i])
+    }
   }
+
+  jm = melt(jacc.mat)
+  colnames(jm) = c(name1, name2, "jaccard_index")
+
+  # cluster signatures
+  ord1 = hclust(dist(jacc.mat))$ord
+  ord2 = hclust(dist(t(jacc.mat)))$ord
+  jm[,1] = factor(jm[,1], levels = rownames(jacc.mat)[ord1])
+  jm[,2] = factor(jm[,2], levels = colnames(jacc.mat)[ord2])
+  return(jm)
 }
 
-jm = melt(jacc.mat)
-colnames(jm) = c("BioQC", "GTEx", "jaccard_index")
 
-# cluster signatures
-ord.gtex = hclust(t(dist(jacc.mat)))$ord
-ord.bioqc = hclust(dist(jacc.mat))$ord
-jm$BioQC = factor(jm$BioQC, levels = rownames(jacc.mat)[ord.bioqc])
-jm$GTEx = factor(jm$GTEx, levels = colnames(jacc.mat)[ord.gtex])
-
-make.plot = function() {
+make.plot = function(jm) {
+  x = colnames(jm)[1]
+  y = colnames(jm)[2]
   hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')  
-  return(ggplot(jm, aes(x=BioQC, y=GTEx)) + 
+  return(ggplot(jm, aes(x=get(x), y=get(y))) + 
     geom_tile(aes(fill=jaccard_index))+
     scale_fill_gradientn(colours = hm.palette(100)) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)))
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+    labs(x=x, y=y))
 }
 
-pdf("fig/jaccard-index.pdf", width=25, height=10)
-print(make.plot())
+# pdf("fig/jaccard-index.pdf", width=25, height=10)
+# print(make.plot())
+# dev.off()
+# 
+# # make heatmap. 
+# print(make.plot() + theme(axis.text=element_text(size=6)))
+
+jm=pairwiseJaccMat(gtex, gtex.gini, "GTEx limma", "GTEx gini")
+glgg = make.plot(jm)
+jm=pairwiseJaccMat(gtex, bioqc, "GTEx limma", "BioQC")
+glbqc = make.plot(jm)
+jm=pairwiseJaccMat(gtex.gini, bioqc, "GTEx gini", "BioQC")
+gggbc = make.plot(jm)
+
+pdf("fig/jaccard_gtex-limma_gtex-gini.pdf", width=10, height=12)
+print(glgg)
 dev.off()
 
-# make heatmap. 
-print(make.plot() + theme(axis.text=element_text(size=6)))
+pdf("fig/jaccard_gtex-limma_bioqc.pdf", width=10, height=35)
+print(glbqc)
+dev.off()
+
+pdf("fig/jaccard_gtex-gini_bioqc.pdf", width=15, height=35)
+print(gggbc)
+dev.off()
+
+th = theme(axis.ticks.x=element_blank(),
+           axis.ticks.y=element_blank(), 
+           axis.text.x=element_blank(),
+           axis.text.y=element_blank(), legend.position="none")
+
+grid.arrange(glgg + th, glbqc + th, gggbc + th,ncol=3)
 ```
 
-It also suggests, that ngs signatures should not be applied on microarray data and vice versa. 
-Only NGS signatures: 
-```{r jaccard_ngs}
-jm = melt(jacc.mat[str_detect(rownames(jacc.mat), "NGS"),])
-colnames(jm) = c("BioQC", "GTEx", "jaccard_index")
 
-# cluster signatures
-ord.gtex = hclust(t(dist(jacc.mat)))$ord
-ord.bioqc = hclust(dist(jacc.mat))$ord
-jm$BioQC = factor(jm$BioQC, levels = rownames(jacc.mat[str_detect(rownames(jacc.mat), "NGS"),])[ord.bioqc])
-jm$GTEx = factor(jm$GTEx, levels = colnames(jacc.mat)[ord.gtex])
-
-make.plot = function() {
-  hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')  
-  return(ggplot(jm, aes(x=BioQC, y=GTEx)) + 
-    geom_tile(aes(fill=jaccard_index))+
-    scale_fill_gradientn(colours = hm.palette(100)) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)))
-}
-
-# make heatmap. 
-print(make.plot())
-```
-
-Some signature reproduce well, others don't.
-
-
-```{r write_gmt, include=FALSE}
-file.remove("gmt/gtex_signatures.gmt")
-for(signame in names(signatures)) {
-  sig = signatures[[signame]]
-  line = sprintf("GTEx_%s\tGTEx_limma\t%s", signame, str_c(sig, collapse="\t"))
-  write(line,file="gtex_signatures.gmt",append=TRUE)
-}
-```
 
 ## R Session Info
 ```{r session_info}

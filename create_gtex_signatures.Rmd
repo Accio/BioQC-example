@@ -28,39 +28,41 @@ opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="cente
 ### Load the data
 We read the raw counts from the `.gct` file and preprocessed tissue annotations from `GTEx-UDISDataSetID5681-sampleAnnotation.txt`. 
 ```{r read_data}
-gct = read_gct_matrix("GTEX_v6/GTEx_Analysis_v6_RNA-seq_RNA-SeQCv1.1.8_gene_reads.gct")
-annotation = read_tsv("data/GTEx-UDISDataSetID5681-sampleAnnotation.txt")
-annotation.tissue = read_tsv("GTEX_v6/v6_UDIS.txt")
-ids = colnames(gct)
-annotation.matched = matchColumn(ids, annotation, "Experiment name")
-annotation.tissue.matched = matchColumn(ids, annotation.tissue, "SAMPID")
-
-colData = cbind(annotation.matched, annotation.tissue.matched)
-rownames(colData) = colData[["Experiment name"]]
-
-#filter rows with NA
-# RIN = RNA quality index
-# SMTS = tissue
-validInds = which(!apply(is.na(colData[,c("RIN", "Gender", "SMTS")]), 1, sum) >= 1)
-gct = gct[,validInds]
-colData = colData[validInds,]
+# loading big files takes some time, not necessary if we have the cache
+if(!file.exists("cache_data/limma_model.Rdata")) {
+  gct = read_gct_matrix("GTEX_v6/GTEx_Analysis_v6_RNA-seq_RNA-SeQCv1.1.8_gene_reads.gct")
+  annotation = read_tsv("data/GTEx-UDISDataSetID5681-sampleAnnotation.txt")
+  annotation.tissue = read_tsv("GTEX_v6/v6_UDIS.txt")
+  ids = colnames(gct)
+  annotation.matched = matchColumn(ids, annotation, "Experiment name")
+  annotation.tissue.matched = matchColumn(ids, annotation.tissue, "SAMPID")
+  
+  colData = cbind(annotation.matched, annotation.tissue.matched)
+  rownames(colData) = colData[["Experiment name"]]
+  
+  #filter rows with NA
+  # RIN = RNA quality index
+  # SMTS = tissue
+  validInds = which(!apply(is.na(colData[,c("RIN", "Gender", "SMTS")]), 1, sum) >= 1)
+  gct = gct[,validInds]
+  colData = colData[validInds,]
+}
 ```
 
-### perform differential analysis
-We run a differntial expression analysis for tissue on the GTEx dataset with 
-* Gender 
-* RIN (RNA quality index)
-as covariates. 
+### Perform differential analysis
+We first filter the GTEx expression data to only include genes for which at least 10 samples have a count-per-million (CPM) greater than 1. 
 
-We filter that data for having at least 10 samples per gene having a count-per-milltion (CPM) of at least 1. 
+We then perform a differntial expression analysis for tissue on the filtered dataset with `Gender` and `RIN` (RNA quality index) as covariates. 
 
 We call a differetially expressed if it meets both of the following criteria: 
+
 * fold-change of >100 (log2: `r round(log2(100), 2)`)
 * p-value < 0.01 (Bonferroni corrected)
+
 ```{r limma_model}
 # read file from cache if available. 
-if(file.exists("limma_model.Rdata")) {
-  load("limma_model.Rdata")
+if(file.exists("cache_data/limma_model.Rdata")) {
+  load("cache_data/limma_model.Rdata")
 } else {
   # RIN = RNA quality index
   # SMTS = tissue
@@ -83,7 +85,7 @@ if(file.exists("limma_model.Rdata")) {
 
 # apply cutoffs. 
 fit.e = treat(fit, lfc=log2(100))
-rslt = decideTests(fit.e, p.value=(0.01 / nrow(gct)))
+rslt = decideTests(fit.e, p.value=(0.01 / nrow(fit)))
 ```
 
 
@@ -125,8 +127,38 @@ for(tCol in sigCols) {
 }
 
 names(signatures) = str_match(sigCols, "colData.SMTS(.*)")[,2]
+```
 
-save(signatures, file="gtex_signatures.Rdata")
+For comparison, we create Gini-index-based signatures on the same dataset. 
+The gini-index for each gene has already been calculated in `data/sigmat.all.gini`
+```{r create_signatures_gini}
+gini = data.table(read_tsv("data/sigmat.all.gini"))
+gini = gini[RANKING <= 3,]
+gini = gini[GINI_IDX >= .7,]
+gini = gini[,CATEGORY:=str_match(CATEGORY, "(.*)\\.gct")[,2]]
+signatures.gini = list()
+sigCols.gini = unique(gini[,CATEGORY])
+for(tCol in sigCols.gini) {
+  signatures.gini = append(signatures.gini, list(gini[CATEGORY==tCol,NAME]))
+}
+names(signatures.gini) = sigCols.gini
+```
+
+### Export to gmt
+```{r write_gmt, include=FALSE}
+writeGmt = function(signatures, filename, description) { 
+  if(file.exists(filename)) {
+    file.remove(filename)
+  }
+  for(signame in names(signatures)) {
+    sig = signatures[[signame]]
+    genes = if(length(sig) > 0) str_c(sig, collapse="\t") else ""
+    line = sprintf("GTEx_%s\t%s\t%s", signame, description, genes)
+    write(line,file=filename,append=TRUE)
+  }
+}
+writeGmt(signatures, "gmt/gtex_signatures.gmt", "GTEx_limma")
+writeGmt(signatures.gini, "gmt/gtex_signatures_gini.gmt", "GTEx_gini")
 ```
 
 ## R Session Info
