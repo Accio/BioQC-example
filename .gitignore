@@ -3,3 +3,6 @@ data
 fig
 gmt
 *.html
+*_files
+*_cache
+
