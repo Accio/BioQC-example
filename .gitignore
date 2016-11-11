@@ -3,3 +3,9 @@
 !README.md
 *_cache
 *_files
+data
+fig
+gmt
+*.html
+
+>>>>>>> gtex-signatures/master

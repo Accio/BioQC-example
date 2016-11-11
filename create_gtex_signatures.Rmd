@@ -1,0 +1,169 @@
+---
+title: Deriving tissue signatures from the GTEx dataset. 
+output:
+  html_document: default 
+---
+
+The *GTEx-project*[^1] is a data resource providing high quality gene expression data from multiple reference human tissues. In this document, we identify differentially expressed genes for each tissue using [*voom*](http://bioconductor.org/packages/release/bioc/html/limma.html) and 
+[*limma*](http://bioconductor.org/packages/release/bioc/html/limma.html) to build tissue-specific signatures. 
+
+These signatures can be used with [*BioQC*](https://accio.github.io/BioQC/) to detect tissue heterogeneity in gene expression data. 
+
+[^1]: Lonsdale, J., Thomas, J., Salvatore, M., Phillips, R., Lo, E., Shad, S., … Moore, H. F. (2013). The Genotype-Tissue Expression (GTEx) project. Nature Genetics, 45(6), 580–585. http://doi.org/10.1038/ng.2653
+
+```{r load_libs, include=FALSE}
+library(ribiosUtils)
+libordie(readr)
+libordie(ribiosUtils)
+libordie(ribiosIO)
+libordie(biomaRt)
+libordie(edgeR)
+libordie(data.table)
+libordie(stringr)
+options(fig_caption=TRUE)
+library(knitr)
+opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="center") 
+```
+
+### Load the data
+We read the raw counts from the `.gct` file and preprocessed tissue annotations from `GTEx-UDISDataSetID5681-sampleAnnotation.txt`. 
+```{r read_data}
+# loading big files takes some time, not necessary if we have the cache
+if(!file.exists("cache_data/limma_model.Rdata")) {
+  gct = read_gct_matrix("GTEX_v6/GTEx_Analysis_v6_RNA-seq_RNA-SeQCv1.1.8_gene_reads.gct")
+  annotation = read_tsv("data/GTEx-UDISDataSetID5681-sampleAnnotation.txt")
+  annotation.tissue = read_tsv("GTEX_v6/v6_UDIS.txt")
+  ids = colnames(gct)
+  annotation.matched = matchColumn(ids, annotation, "Experiment name")
+  annotation.tissue.matched = matchColumn(ids, annotation.tissue, "SAMPID")
+  
+  colData = cbind(annotation.matched, annotation.tissue.matched)
+  rownames(colData) = colData[["Experiment name"]]
+  
+  #filter rows with NA
+  # RIN = RNA quality index
+  # SMTS = tissue
+  validInds = which(!apply(is.na(colData[,c("RIN", "Gender", "SMTS")]), 1, sum) >= 1)
+  gct = gct[,validInds]
+  colData = colData[validInds,]
+}
+```
+
+### Perform differential analysis
+We first filter the GTEx expression data to only include genes for which at least 10 samples have a count-per-million (CPM) greater than 1. 
+
+We then perform a differntial expression analysis for tissue on the filtered dataset with `Gender` and `RIN` (RNA quality index) as covariates. 
+
+We call a differetially expressed if it meets both of the following criteria: 
+
+* fold-change of >100 (log2: `r round(log2(100), 2)`)
+* p-value < 0.01 (Bonferroni corrected)
+
+```{r limma_model}
+# read file from cache if available. 
+if(file.exists("cache_data/limma_model.Rdata")) {
+  load("cache_data/limma_model.Rdata")
+} else {
+  # RIN = RNA quality index
+  # SMTS = tissue
+  dgList = DGEList(counts=gct, genes=rownames(gct))
+  designMat = model.matrix(~colData$SMTS + colData$RIN + colData$Gender)
+  
+  # filter for cpm > 1 for at least 10 samples per gene
+  CPM = cpm(dgList)
+  cpmCnt = apply(CPM > 1, 1, sum)
+  cpmInds = cpmCnt >= 10
+  dgList.f = dgList[cpmInds,]
+  
+  dgList.f = calcNormFactors(dgList.f)
+  
+  v = voom(dgList.f, designMat, plot=FALSE)
+  
+  fit = lmFit(v, designMat)
+  save(fit, file="limma_model.Rdata")
+}
+
+# apply cutoffs. 
+fit.e = treat(fit, lfc=log2(100))
+rslt = decideTests(fit.e, p.value=(0.01 / nrow(fit)))
+```
+
+
+### Annotate Gene Symbols
+As the *BioQC* signatures use gene symbols, we need to convert the ENSEMBL gene ids to HGNC gene symbols. 
+We achieve this using the [*biomaRt*](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) Bioconductor package. 
+
+```{r annotation}
+ensembl = useMart("ENSEMBL_MART_ENSEMBL", dataset="hsapiens_gene_ensembl", host="www.ensembl.org")  
+ensemble2hgnc = data.table(getBM(mart=ensembl, attributes=(c("ensembl_gene_id", "hgnc_symbol"))))
+ensemble2hgnc = ensemble2hgnc[hgnc_symbol!='',]
+
+# remove the .digit from the gene name. 
+salitizeEnid = function(x) { 
+  return(str_split(x, "\\.")[[1]][1])
+}
+
+# append sanitized EnsemblID to data table 
+rslt.tab = data.table(rslt, keep.rownames=TRUE)
+names = make.names(colnames(rslt.tab))
+setnames(rslt.tab, names)
+rn.2 = lapply(rslt.tab[,rn], salitizeEnid)
+rslt.tab = rslt.tab[,rn2:=rn.2]
+
+# append hgnc to data table 
+rslt.matched = data.table(matchColumn(ensemble2hgnc$ensembl_gene_id, rslt.tab, 'rn2'))
+rslt.matched = rslt.matched[,hgnc:=ensemble2hgnc[,hgnc_symbol]]
+```
+
+### Create signatures
+Finally, we create lists of signatures for each tissue by collating the list of gene symbols that
+are marked as overexpressed by *limma*. 
+```{r create_signatures}
+signatures = list()
+sigCols =  names[grepl("^colData", names)]
+sigCols = sigCols[1:(length(sigCols)-2)] # remove RIN and Gender
+for(tCol in sigCols) {
+  signatures = append(signatures, list(rslt.matched[get(tCol)==1,hgnc]))
+}
+
+names(signatures) = str_match(sigCols, "colData.SMTS(.*)")[,2]
+```
+
+For comparison, we create Gini-index-based signatures on the same dataset. 
+The gini-index for each gene has already been calculated in `data/sigmat.all.gini`
+```{r create_signatures_gini}
+gini = data.table(read_tsv("data/sigmat.all.gini"))
+gini = gini[RANKING <= 3,]
+gini = gini[GINI_IDX >= .7,]
+gini = gini[VALUE > 1,] # cpm filter
+gini = gini[,CATEGORY:=str_match(CATEGORY, "(.*)\\.gct")[,2]]
+signatures.gini = list()
+sigCols.gini = unique(gini[,CATEGORY])
+for(tCol in sigCols.gini) {
+  signatures.gini = append(signatures.gini, list(gini[CATEGORY==tCol,NAME]))
+}
+names(signatures.gini) = sigCols.gini
+```
+
+### Export to gmt
+```{r write_gmt, include=FALSE}
+writeGmt = function(signatures, filename, description) { 
+  if(file.exists(filename)) {
+    file.remove(filename)
+  }
+  for(signame in names(signatures)) {
+    sig = signatures[[signame]]
+    genes = if(length(sig) > 0) str_c(sig, collapse="\t") else ""
+    line = sprintf("GTEx_%s\t%s\t%s", signame, description, genes)
+    write(line,file=filename,append=TRUE)
+  }
+}
+writeGmt(signatures, "gmt/gtex_signatures.gmt", "GTEx_limma")
+writeGmt(signatures.gini, "gmt/gtex_signatures_gini.gmt", "GTEx_gini")
+```
+
+## R Session Info
+```{r session_info}
+sessionInfo()
+```
+
