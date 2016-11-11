@@ -4,7 +4,6 @@ output:
   md_document:
     variant: markdown_phpextra
     preserve_yaml: TRUE
-  html_document: default
 ---
 
 The *GTEx-project*[^1] is a data resource providing high quality gene expression data from multiple reference human tissues. In this document, we identify differentially expressed genes for each tissue using [*voom*](http://bioconductor.org/packages/release/bioc/html/limma.html) and 
