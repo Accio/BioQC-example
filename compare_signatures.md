@@ -180,7 +180,7 @@ limma:BioQC](compare_signatures_files/jaccard_gtex-limma_bioqc.pdf),
 </p>
 
 Here we filter the matrix for having at least one pair of signatures per
-row having a jaccard index of
+row having a jaccard index of 0.2
 
 ~~~~ r
 bqc.sig = unique(data.table(glbqc_jm)[jaccard_index > jacc.thres,BioQC])

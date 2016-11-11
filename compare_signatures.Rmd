@@ -184,7 +184,7 @@ pairwiseFisherMat = function(gmt1, gmt2, name1, name2) {
 }
 ```
 
-Here we filter the matrix for having at least one pair of signatures per row having a jaccard index of `r jacc.thres = .2`
+Here we filter the matrix for having at least one pair of signatures per row having a jaccard index of `r jacc.thres = .2; jacc.thres`
 ```{r filterd_jacc_mat}
 bqc.sig = unique(data.table(glbqc_jm)[jaccard_index > jacc.thres,BioQC])
 glpqc_jm.sig = glbqc_jm[glbqc_jm$BioQC %in% bqc.sig,]
