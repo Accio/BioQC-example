@@ -125,12 +125,12 @@ pairwiseJaccMat = function(gmt1, gmt2, name1, name2) {
 }
 
 
-make.plot = function(jm) {
+make.plot = function(jm, var="jaccard_index") {
   x = colnames(jm)[1]
   y = colnames(jm)[2]
   hm.palette <- colorRampPalette(rev(brewer.pal(11, 'Spectral')), space='Lab')  
   return(ggplot(jm, aes(x=get(x), y=get(y))) + 
-    geom_tile(aes(fill=jaccard_index))+
+    geom_tile(aes(fill=get(var)))+
     scale_fill_gradientn(colours = hm.palette(100)) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
     labs(x=x, y=y))
@@ -179,29 +179,11 @@ limma:BioQC](compare_signatures_files/jaccard_gtex-limma_bioqc.pdf),
 [GTEx gini:BioQC](compare_signatures_files/jaccard_gtex-gini_bioqc.pdf)
 </p>
 
-Here we filter for the BioQC signatures having a p-value (Fisher's exact
-test on the overlap) of at most 10^{-20} (Bonferroni corrected) for at
-least one of signatures generated with limma.
+Here we filter the matrix for having at least one pair of signatures per
+row having a jaccard index of
 
 ~~~~ r
-pairwiseFisherMat = function(gmt1, gmt2, name1, name2) {
-  fisher.mat = matrix(nrow=length(gmt1),
-                  ncol=length(gmt2),
-                  dimnames=list(names(gmt1), names(gmt2)))
-
-  for(i in 1:ncol(fisher.mat)) {
-    for(j in 1:nrow(fisher.mat)) {
-      fisher.mat[j, i] = fisherTest(gmt1, gmt2, names(gmt1)[j], names(gmt2)[i])
-    }
-  }
-  fm = melt(fisher.mat)
-  colnames(fm) = c(name1, name2, "pvalue")
-  return(fm)
-}
-
-
-glbqc_pval = data.table(pairwiseFisherMat(gtex, bioqc, "GTEx limma", "BioQC"))
-bqc.sig = unique(glbqc_pval[pvalue < pval,BioQC])
+bqc.sig = unique(data.table(glbqc_jm)[jaccard_index > jacc.thres,BioQC])
 glpqc_jm.sig = glbqc_jm[glbqc_jm$BioQC %in% bqc.sig,]
 make.plot(glpqc_jm.sig)
 ~~~~
