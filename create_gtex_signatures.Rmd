@@ -135,6 +135,7 @@ The gini-index for each gene has already been calculated in `data/sigmat.all.gin
 gini = data.table(read_tsv("data/sigmat.all.gini"))
 gini = gini[RANKING <= 3,]
 gini = gini[GINI_IDX >= .7,]
+gini = gini[VALUE > 1,] # cpm filter
 gini = gini[,CATEGORY:=str_match(CATEGORY, "(.*)\\.gct")[,2]]
 signatures.gini = list()
 sigCols.gini = unique(gini[,CATEGORY])
