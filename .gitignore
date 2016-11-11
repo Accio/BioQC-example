@@ -1,5 +1,4 @@
 *.html
-*.md
 !README.md
 *_cache
 *_files
