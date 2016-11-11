@@ -4,6 +4,7 @@ output:
   md_document:
     variant: markdown_phpextra
     preserve_yaml: TRUE
+  html_document: default
 ---
 Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*       ](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling, Martine Burtin, Fabiola Terzi, Silvia Ines Pomposiello, Gregor Sturm and [Laura Badi](laura.badi@roche.com))
 
@@ -135,7 +136,7 @@ The sensitivity benchmark above suffers from the limitation that the distributio
 Given the expression profile of a sample of tissue A ($\mathbf{Y}_A$), and that of a sample of tissue B ($\mathbf{Y}_B$), the weighted linear mixing produces a new profile $\mathbf{Y}=\omega\mathbf{Y_A}+(1-\omega)\mathbf{Y_B}$, where $\omega \in [0,1]$. In essence the profiles of two tissue types are linearly mixed in different proportions, which simulates varying severities of contaminations. We asked whether BioQC could detect such mixings, and if so, how sensitive is the method.
 
 ```{r mixing_benchmark, echo=FALSE}
-dogfile <- "GSE20113.RData"
+dogfile <- "data/GSE20113.RData"
 if(!file.exists(dogfile)) {
   rawdog <- getGEO("GSE20113")[[1]]
   filterFeatures <- function(eset) {

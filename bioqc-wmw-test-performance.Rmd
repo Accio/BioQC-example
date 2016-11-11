@@ -4,6 +4,7 @@ output:
   md_document:
     variant: markdown_phpextra
     preserve_yaml: TRUE
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}

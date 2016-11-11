@@ -4,6 +4,7 @@ output:
   md_document:
     variant: markdown_phpextra
     preserve_yaml: TRUE
+  html_document: default
 ---
 Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*       ](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling, Martine Burtin, Fabiola Terzi, Silvia Ines Pomposiello, Gregor Sturm and [Laura Badi](laura.badi@roche.com))
 
@@ -33,7 +34,7 @@ gmt <- readGmt(gmtFile)
 ```
 
 ```{r load_data}
-file <- "bioqc-nephrectomy.RData"
+file <- "data/bioqc-nephrectomy.RData"
 load(file)
 print(eset)
 ```

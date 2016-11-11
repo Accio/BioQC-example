@@ -1,6 +1,9 @@
 ---
 title: Compare Signatures derived from GTEx with BioQC
 output:
+  md_document:
+    variant: markdown_phpextra
+    preserve_yaml: TRUE
   html_document: default
 ---
 
@@ -40,6 +43,12 @@ drawVenn = function(gmt1, gmt2, sig1, sig2) {
   is = intersectSigs(gmt1, gmt2, sig1, sig2)
   plot.new()
   draw.pairwise.venn(is[1], is[2], is[3])
+}
+
+fisherTest = function(gmt1, gmt2, sig1, sig2) {
+  is = intersectSigs(gmt1, gmt2, sig1, sig2)
+  mat = matrix(c(is[3],is[2]-is[3],is[1]-is[3],sum(is[1:2])-is[3]), ncol=2)
+  return(fisher.test(mat))
 }
 ```
 
@@ -86,7 +95,7 @@ The signatures from GTEx appear to be substantially larger than the ones shipped
 
 
 ### Compare the signature sets using jaccard index
-```{r jaccard_index, results='hide', fig.width=8, fig.height=3, fig.cap="Heatmaps showing the jaccard index between the different signatures. Open the PDF files to see the figure with labels: [GTEx limma:GTEx gini](fig/jaccard_gtex-limma_gtex-gini.pdf), [GTEx limma:BioQC](fig/jaccard_gtex-limma_bioqc.pdf), [GTEx gini:BioQC](fig/jaccard_gtex-gini_bioqc.pdf)"}
+```{r jaccard_index, results='hide', fig.width=8, fig.height=3, fig.cap="Heatmaps showing the jaccard index between the different signatures. Open the PDF files to see the figure with labels: [GTEx limma:GTEx gini](compare_signatures_files/jaccard_gtex-limma_gtex-gini.pdf), [GTEx limma:BioQC](compare_signatures_files/jaccard_gtex-limma_bioqc.pdf), [GTEx gini:BioQC](compare_signatures_files/jaccard_gtex-gini_bioqc.pdf)"}
 pairwiseJaccMat = function(gmt1, gmt2, name1, name2) { 
   jacc.mat = matrix(nrow=length(gmt1),
                   ncol=length(gmt2),
@@ -135,15 +144,15 @@ glbqc = make.plot(jm)
 jm=pairwiseJaccMat(gtex.gini, bioqc, "GTEx gini", "BioQC")
 gggbc = make.plot(jm)
 
-pdf("fig/jaccard_gtex-limma_gtex-gini.pdf", width=10, height=12)
+pdf("compare_signatures_files/jaccard_gtex-limma_gtex-gini.pdf", width=10, height=12)
 print(glgg)
 dev.off()
 
-pdf("fig/jaccard_gtex-limma_bioqc.pdf", width=10, height=35)
+pdf("compare_signatures_files/jaccard_gtex-limma_bioqc.pdf", width=10, height=35)
 print(glbqc)
 dev.off()
 
-pdf("fig/jaccard_gtex-gini_bioqc.pdf", width=15, height=35)
+pdf("compare_signatures_files/jaccard_gtex-gini_bioqc.pdf", width=15, height=35)
 print(gggbc)
 dev.off()
 
@@ -155,6 +164,28 @@ th = theme(axis.ticks.x=element_blank(),
 grid.arrange(glgg + th, glbqc + th, gggbc + th,ncol=3)
 ```
 
+```{r}
+jacc.mat = matrix(nrow=length(gmt1),
+                  ncol=length(gmt2),
+                  dimnames=list(names(gmt1), names(gmt2)))
+
+for(i in 1:ncol(jacc.mat)) {
+  for(j in 1:nrow(jacc.mat)) {
+    jacc.mat[j,i] = jaccInd(gmt1, gmt2, names(gmt1)[j], names(gmt2)[i])
+  }
+}
+
+fisher.mat = matrix(nrow=length(gmt1),
+                  ncol=length(gmt2),
+                  dimnames=list(names(gmt1), names(gmt2)))
+
+for(i in 1:ncol(jacc.mat)) {
+  for(j in 1:nrow(jacc.mat)) {
+    fisher.mat[j, i] = fisherTest(gmt1, gmt2, names(gmt1)[j], names(gmt2)[i])
+  }
+}
+
+```
 
 
 ## R Session Info
