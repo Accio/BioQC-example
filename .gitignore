@@ -1,7 +1,6 @@
 *.html
 !README.md
 *_cache
-*_files
 fig
 gmt
 *.html
