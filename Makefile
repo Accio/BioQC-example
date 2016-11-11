@@ -1,10 +1,15 @@
-
 R=R
+INPUT= $(shell find . -maxdepth 1 -type f -name "*.Rmd")
+MD_FILES= $(patsubst %.Rmd,%.md,$(INPUT))
+HTML_FILES= $(patsubst %.Rmd,%.html,$(INPUT))
 
-all: setup bioqc-simulation.md bioqc-kidney.md bioqc-wmw-test-performance.md create_gtex_signatures.md compare_signatures.md 
+all: setup $(MD_FILES)
+
+html: all $(HTML_FILES)
 
 setup:
 	mkdir -p gmt
+	mkdir -p compare_signature_files
 
 clean:
 	rm -fv *.html
@@ -16,18 +21,8 @@ clean:
 wipe: clean
 	rm -rfv *_cache
 
-create_gtex_signatures.md: create_gtex_signatures.Rmd
+%.md: %.Rmd
 	Rscript -e "rmarkdown::render('$<', output_format='all')"
 
-compare_signatures.md: compare_signatures.Rmd
-	mkdir -p compare_signatures_files
-	Rscript -e "rmarkdown::render('$<', output_format='all')"
-
-bioqc-simulation.md:bioqc-simulation.Rmd
-	Rscript -e "rmarkdown::render('$<', output_format='all')"
-
-bioqc-kidney.md:bioqc-kidney.Rmd
-	Rscript -e "rmarkdown::render('$<', output_format='all')"
-
-bioqc-wmw-test-performance.md:bioqc-wmw-test-performance.Rmd
-	Rscript -e "rmarkdown::render('$<', output_format='all')"
+%.html: %.md
+	pandoc -s --mathjax --number-sections -o $@ $<
