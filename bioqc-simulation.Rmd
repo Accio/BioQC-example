@@ -52,6 +52,7 @@ humanGenes <- unique(na.omit(unlist(as.list(hgu133plus2SYMBOL))))
 gmtFile <- system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt",
                        package="BioQC")
 gmt <- readGmt(gmtFile)
+tissueInds <- sapply(gmt, function(x) match(x$genes, humanGenes))
 ```
 
 
@@ -71,7 +72,6 @@ randomMatrix <- function(rows=humanGenes, ncol=5) {
 noSamples <- c(1, 5, 10, 20, 50, 100)
 noBenchRep <- 100
 tmRandomMats <- lapply(noSamples, function(x) randomMatrix(ncol=x))
-tissueInds <- sapply(gmt, function(x) match(x$genes, humanGenes))
 
 wmwTestR <- function(matrix, indices, alternative) {
   res <- apply(matrix, 2, function(x) {
