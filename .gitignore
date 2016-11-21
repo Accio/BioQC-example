@@ -1,5 +1,11 @@
 *.html
+*_cache
+fig
+gmt
+*.html
 *.md
 !README.md
-*_cache
 *_files
+data/gtex
+html
+.allmark
