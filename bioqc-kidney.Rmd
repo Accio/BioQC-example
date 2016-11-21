@@ -5,8 +5,7 @@ output:
     variant: markdown_phpextra
     preserve_yaml: TRUE
 ---
-Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling and [Laura Badi](laura.badi@roche.com))
-
+Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*       ](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling, Martine Burtin, Fabiola Terzi, Silvia Ines Pomposiello, Gregor Sturm and [Laura Badi](laura.badi@roche.com))
 
 ```{r setup, include=FALSE}
 options(fig_caption=TRUE)
@@ -18,7 +17,7 @@ Introduction
 ------------
 In this vignette, we demonstrate the use of *BioQC* with a case study where mouse kidney samples were profiled for gene expression. Results of BioQC pointed to potential tissue heterogeneity caused by pancreas contamination which was confirmed by qRT-PCR experiments. Source code and data needed to reproduce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
-This is a supplementary documentation of *BioQC*, a R/Bioconductor package used to detect tissue heterogeneity from high-throughput gene expression profiling data with tissue-specific gene signatures. For its basic use please refer to the documentation and vignettes shipped along with the package, or to the other vignette [bioqc-simulation](bioqc-simulation.md) which applies the algorithm to simulated datsets. Here we demonstrate its use with a real biological data set, which is not included in the package distribution due to size limitations.
+This is a supplementary documentation of *BioQC*, a R/Bioconductor package used to detect tissue heterogeneity from high-throughput gene expression profiling data with tissue-specific gene signatures. For its basic use please refer to the documentation and vignettes shipped along with the package, or to the other vignette [bioqc-simulation](bioqc-simulation.html) which applies the algorithm to simulated datsets. Here we demonstrate its use with a real biological data set, which is not included in the package distribution due to size limitations.
 
 
 Importing the data
@@ -34,7 +33,7 @@ gmt <- readGmt(gmtFile)
 ```
 
 ```{r load_data}
-file <- "bioqc-nephrectomy.RData"
+file <- "data/bioqc-nephrectomy.RData"
 load(file)
 print(eset)
 ```

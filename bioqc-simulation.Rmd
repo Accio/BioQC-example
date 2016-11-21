@@ -5,8 +5,7 @@ output:
     variant: markdown_phpextra
     preserve_yaml: TRUE
 ---
-Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling and [Laura Badi](laura.badi@roche.com))
-
+Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*       ](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling, Martine Burtin, Fabiola Terzi, Silvia Ines Pomposiello, Gregor Sturm and [Laura Badi](laura.badi@roche.com))
 
 ```{r setup, include=FALSE}
 options(fig_caption=TRUE)
@@ -14,23 +13,21 @@ library(knitr)
 opts_chunk$set(out.extra='style="display:block; margin: auto"', fig.align="center")
 ```
 
-In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a fast and sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code used to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
+In this vignette, we perform simulations with both model-generated and real-world data using *BioQC*. We show that *BioQC* is a sensitive method to detect tissue heterogeneity from high-throughput gene expression data. The source code used to produce this document can be found in the github repository [BioQC-example](https://github.com/Accio/BioQC-example).
 
 *BioQC* is a R/Bioconductor package to detect tissue heterogeneity from high-throughput gene expression profiling data. It implements an efficient Wilcoxon-Mann-Whitney test, and offers tissue-specific gene signatures that are ready to use 'out of the box'.
 
 
 Experiment setup
 ----------------
-In this document, we perform three simulation studies with *BioQC*:
+In this document, we perform two simulation studies with *BioQC*:
 
-* **Time benchmark** tests the time-efficiency of the Wilcoxon test implemented in *BioQC*, compared with the native implementation in *R*;
 * **Sensitivity benchmark** tests the sensitivity and specificity of *BioQC* detecting tissue heterogeneity using model-generated, simulated data;
 * **Mixing benchmark** tests the sensitivity and specificity of *BioQC* using simulated contamination with real-world data.
 
 All source code that is needed to reproduce the results can be found in the `.Rmd` file generating this document. 
 
 ```{r lib, warning=FALSE, message=FALSE, results="hide"}
-library(testthat)
 library(BioQC)
 library(hgu133plus2.db) ## to simulate an microarray expression dataset
 library(lattice)
@@ -39,7 +36,6 @@ library(gridExtra)
 library(GEOquery)
 library(xtable)
 library(gplots)
-library(rbenchmark)
 
 pdf.options(family="ArialMT", useDingbats=FALSE)
 
@@ -55,138 +51,14 @@ gmt <- readGmt(gmtFile)
 tissueInds <- sapply(gmt, function(x) match(x$genes, humanGenes))
 ```
 
-
-Time benchmark
---------------
-In the first experiment, we setup random expression matrices of `r length(humanGenes)` human protein-coding genes of 1, 5, 10, 50, or 100 samples. Genes  are $i.i.d$ distributed following $\mathcal{N}(0,1)$. The native R and the *BioQC* implementations of the Wilcoxon-Mann-Whitney test are applied to the matrices respectively.
-
-
-```{r time_benchmark, cache=TRUE, echo=FALSE}
-randomMatrix <- function(rows=humanGenes, ncol=5) {
-  nrow <- length(rows)
-  mat <- matrix(rnorm(nrow*ncol),
-                nrow=nrow, byrow=TRUE)
-  rownames(mat) <- rows
-  return(mat)
-}
-noSamples <- c(1, 5, 10, 20, 50, 100)
-noBenchRep <- 100
-tmRandomMats <- lapply(noSamples, function(x) randomMatrix(ncol=x))
-
-wmwTestR <- function(matrix, indices, alternative) {
-  res <- apply(matrix, 2, function(x) {
-    sapply(indices, function(index) {
-      sub <- rep(FALSE, length(x))
-      sub[index] <- TRUE
-      wt <- wilcox.test(x[sub], x[!sub],
-                        alternative=alternative,
-                        exact=FALSE)
-      return(wt$p.value)
-      })
-    })
-  return(res)
-  }
-
-## WARNING: very slow (~1-2 hours)
-benchmarkFile <- "simulation-benchmark.RData"
-if(!file.exists(benchmarkFile)) {
-  bioqcRes <- lapply(tmRandomMats, function(mat) {
-    bench <- benchmark(wmwTestRes<- wmwTest(mat,
-                                            tissueInds,
-                                            valType="p.greater",
-                                            simplify=TRUE),
-                       replications=noBenchRep)
-    elapTime <- c("elapsed"=bench$elapsed,
-                  "user"=bench$user.self,
-                  "sys"=bench$sys.self)/noBenchRep
-    res <- list(elapTime=elapTime,
-                wmwTestRes=wmwTestRes)
-    return(res)
-    })
-  
-  rRes <- lapply(tmRandomMats, function(mat) {
-    elapTime <- system.time(wmwTestRes <- wmwTestR(mat, tissueInds, alternative="greater"))
-    res <- list(elapTime=elapTime,
-                wmwTestRes=wmwTestRes)
-    return(res)
-    })
-  save(bioqcRes, rRes, file=benchmarkFile)
-  } else {
-    load(benchmarkFile)
- }
-getWmwTestRes <- function(x) x$wmwTestRes
-rNumRes <- lapply(rRes, getWmwTestRes)
-bioqcNumRes <- lapply(bioqcRes, getWmwTestRes)
-```
-
-The numeric results of both implementations, `bioqcNumRes` (from *BioQC*) and `rNumRes` (from *R*), are equivalent, as shown by the next     command.
-
-```{r time_benchmark_identical}
-expect_equal(bioqcNumRes, rNumRes)
-```
-
-The *BioQC* implementation is more than 500 times much faster: while it takes about one second for BioQC to calculate enrichment scores of all `r length(gmt)` signatures in 100 samples, the native R implementation takes about 20 minutes: 
-
-```{r trellis_prepare, echo=FALSE}
-op <- list(layout.widths = list(left.padding = 0, key.ylab.padding = 0.5,
-                                ylab.axis.padding = 0.5, axis.right = 0.5, right.padding = 0),
-           layout.heights = list(top.padding = 0, bottom.padding = 0,
-                                 axis.top = 0, main.key.padding = 0.5, key.axis.padding = 0.5),
-           axis.text=list(cex=1.2),
-           par.xlab.text=list(cex=1.4),
-           par.sub.text=list(cex=1.4),
-           add.text=list(cex=1.4),
-           par.ylab.text=list(cex=1.4))
-```
-
-```{r time_benchmark_vis, echo=FALSE, fig.width=8, fig.height=3, dev='svg', dev.args=list(pointsize=2.5), fig.cap="Time benchmark results of BioQC and R implementation of Wilcoxon-Mann-Whitney test. Left panel: elapsed time in seconds (logarithmic Y-axis). Right panel: ratio of elapsed time by two implementations. All results achieved by a single thread on in a RedHat Linux server."}
-getTimeRes <- function(x) x$elapTime["elapsed"]
-bioqcTimeRes <- sapply(bioqcRes, getTimeRes)
-rTimeRes <- sapply(rRes, getTimeRes)
-timeRes <- data.frame(NoSample=noSamples,
-                      Time=c(bioqcTimeRes, rTimeRes),
-                      Method=rep(c("BioQC", "NativeR"), each=length(noSamples)))
-
-timeXY <- xyplot(Time ~ NoSample, group=Method, data=timeRes,  type="b",
-                 auto.key=list(columns=2L),
-                 xlab="Number of samples", ylab="Time [s]",
-                 par.settings=list(superpose.symbol=list(cex=1.25, pch=16, col=c("black", "red")),
-                                   superpose.line=list(col=c("black", "red"))),
-                 scales=list(tck=c(1,0), alternating=1L,
-                             x=list(at=noSamples),
-                             y=list(log=2, at=10^c(-2, -1, 0,1,2,3, log10(2000)), labels=c(0.01, 0.1, 1, 10,100,1000, 2000))))
-timeFactor <- with(timeRes,
-                   tapply(1:nrow(timeRes),
-                          list(NoSample),  function(x) {
-                            bioqcTime <- subset(timeRes[x,], Method=="BioQC")$Time
-                            rTime <- subset(timeRes[x,], Method=="NativeR")$Time
-                            rTime/bioqcTime
-                            }))
-timeFactor.yCeiling <- max(ceiling(timeFactor/500))*500
-timeFactorBar <- barchart(timeFactor ~ noSamples, horizontal=FALSE,
-                          xlab="Number of samples", ylab="Ratio of elapsed time [R/BioQC]",
-                          ylim=c(-20, timeFactor.yCeiling+50), col=colorRampPalette(c("lightblue", "navyblue"))(length(noSamples)),
-                          scales=list(tck=c(1, 0), alternating=1L,
-                                      y=list(at=seq(0,timeFactor.yCeiling, by=500)),
-                                      x=list(at=seq(along=timeFactor), labels=noSamples)))
-
-grid.arrange(timeXY, timeFactorBar, ncol=2)
-
-```
-
-The main reason underlying the low performance of R implementation is that the `wilcox.test` function sorts two numeric vectors that are to be compared. When the function is repeatedly applied to gene expression data, it performs many expensive sorting operations which are futile, because the sorting of genes outside of the gene set (*background genes*) does not change between samples. *BioQC* sorts the background genes only once for each gene set, independent of how many samples are tested.
-
-In addition, *BioQC* implements an approximate Wilcoxon test instead of the exact version, because the difference between the two is negligible for high-throughput gene expression data. Last but not least, *BioQC* implements its core algorithm in C so as to maximize the time- and memory-efficiency.
-
-Putting these tweaks together, *BioQC* achieves identical results as the native implementation in two orders of magnitude less time. This    renders *BioQC* a highly efficient tool for quality control of large-scale high-throughput gene expression data.
-
-
-
 Sensitivity Benchmark
 ---------------------
 We next asked the question how sensitive *BioQC* is to expression changes of tissue signature genes. Similar to the previous simulation, we create random expression matrices. While keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
 
 ```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=3, dev='svg', fig.cap=sprintf("Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all %s signatures plotted against the difference in mean expression values.", length(gmt))}
+
+tissueInds <- sapply(gmt, function(x) match(x$genes, humanGenes))
+
 randomMatrixButOneSignature <- function(rows=humanGenes, signatureGenes,
                                         amplitudes=seq(0, 3, by=0.5)) {
   nrow <- length(rows)
@@ -206,7 +78,7 @@ randomMatrixButOneSignature <- function(rows=humanGenes, signatureGenes,
     mat[sigInd, isCurrCol] <-  replaceMatrix
     }
   return(mat)
-  }
+}
 
 selGeneSet <- "Ovary_NGS_RNASEQATLAS_0.6_3"
 selSignature <- gmt[[selGeneSet]]$genes
@@ -264,7 +136,7 @@ The sensitivity benchmark above suffers from the limitation that the distributio
 Given the expression profile of a sample of tissue A ($\mathbf{Y}_A$), and that of a sample of tissue B ($\mathbf{Y}_B$), the weighted linear mixing produces a new profile $\mathbf{Y}=\omega\mathbf{Y_A}+(1-\omega)\mathbf{Y_B}$, where $\omega \in [0,1]$. In essence the profiles of two tissue types are linearly mixed in different proportions, which simulates varying severities of contaminations. We asked whether BioQC could detect such mixings, and if so, how sensitive is the method.
 
 ```{r mixing_benchmark, echo=FALSE}
-dogfile <- "GSE20113.RData"
+dogfile <- "data/GSE20113.RData"
 if(!file.exists(dogfile)) {
   rawdog <- getGEO("GSE20113")[[1]]
   filterFeatures <- function(eset) {
