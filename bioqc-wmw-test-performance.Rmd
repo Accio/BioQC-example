@@ -42,7 +42,7 @@ gmtFile <- system.file("extdata/exp.tissuemark.affy.roche.symbols.gmt",
 gmt <- readGmt(gmtFile)
 ```
 
-Two alternative methods could be compared with the Wilcoxon-Mann-Whitney (WMW) test proposed by BioQC: the Kolmogonov-Smirnov (KS) test, and the Student’s t-test, or more particularly, the Welch’s test which does not assume equal sample number or equal variance, which is appropriate in the setting of gene expression studies. 
+Two alternative methods could be compared with the Wilcoxon-Mann-Whitney (WMW) test proposed by BioQC: the Kolmogorov-Smirnov (KS) test, and the Student’s t-test, or more particularly, the Welch’s test which does not assume equal sample number or equal variance, which is appropriate in the setting of gene expression studies. 
 
 1. It is documented in statistics literature that the WMW test offers a higher power than the Kolmogorov-Smirnov test[^1],[^2]. 
 2. Compared with parameterized test methods such as the t-test, the WMW test is (a) resistance to monotone transformation,  (b) suffers less from outliers, and (c) provides higher efficiency when many genes are profiled and the distribution of gene expression deviates from the normal distribution, which are important criteria in genome-wide expression data. 
