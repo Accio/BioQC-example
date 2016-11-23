@@ -55,7 +55,7 @@ Sensitivity Benchmark
 ---------------------
 We next asked the question how sensitive *BioQC* is to expression changes of tissue signature genes. Similar to the previous simulation, we create random expression matrices. While keeping all other genes $i.i.d$ normally distributed following $\mathcal{N}(0,1)$, we dedicatedly increase the expression of genes in one randomly selected tissue signature (ovary, with 43 genes) by different amplitudes: these genes' expression levels are randomly drawn from different normal distributions with varying expectation and constant variance between $\mathcal{N}(0,1)$ and $\mathcal{N}(3,1)$. To test the robustness of the algorithm, 10 samples are generated for each mean expression difference value.
 
-```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=3, dev='svg', fig.cap=sprintf("Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all %s signatures plotted against the difference in mean expression values.", length(gmt))}
+```{r sensitivity_benchmark_fig, echo=FALSE, fig.width=8, fig.height=4.5, dev='svg', fig.cap=sprintf("**Figure 1:** Sensitivity benchmark. Expression levels of genes in the ovary signature are dedicately sampled randomly from normal distributions with different mean values. Left panel: enrichment scores reported by *BioQC* for the ovary signature, plotted against the differences in mean expression values; Right panel: rank of ovary enrichment scores in all %s signatures plotted against the difference in mean expression values.", length(gmt))}
 
 tissueInds <- sapply(gmt, function(x) match(x$genes, humanGenes))
 
@@ -210,7 +210,7 @@ heart <- rowMeans(exprs(dog)[, dog$Label=="Heart"])
  colnames(hjMixSubEnrich) <- colnames(hjMixSubRank) <- mixPropsLabels
 ``` 
 
-```{r hjMixVis, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum."}
+```{r hjMixVis, echo=FALSE, fig.width=8, fig.height=4, dev='svg', fig.cap="**Figure 2:** Results of a mixing case study. Left panel: *BioQC* enrichment scores of small intestine and cardiac muscle varying upon different proportions of jejunum; Right panel: ranks of enrichment scores varying upon different proportions of jejunum."}
 mixPropsShow <- seq(0, 1, 0.25)
 mixPropsShowLabels <- sprintf("%d%%", mixPropsShow*100)
 hjCols <- c("orange", "lightblue")
@@ -306,7 +306,7 @@ for(i in 1:nrow(dogComb)) {
 
 Following the heart-jejunum example, we performed all 45 pairwise mixing experiments, producing weighted linear combinations of gene expression        profiles of each pair of tissues (excluding self-mixing). The results are summaried in a heatmap:
 
-```{r dog_mix_vis, echo=FALSE, fig.width=8, fig.height=5, dev='svg', fig.cap="Results of the pairwise mixing experiment. Each cell represents the minimal percentage of tissue of the column as contamination in the tissue of the row that can be detected by *BioQC*. No values are available for cells on the diagonal because self-mixing was excluded. Heart  and skeletal muscle are very close to each other and therefore their detection limit is not considered."}
+```{r dog_mix_vis, echo=FALSE, fig.width=8, fig.height=5, dev='svg', fig.cap="**Figure 3:** Results of the pairwise mixing experiment. Each cell represents the minimal percentage of tissue of the column as contamination in the tissue of the row that can be detected by *BioQC*. No values are available for cells on the diagonal because self-mixing was excluded. Heart  and skeletal muscle are very close to each other and therefore their detection limit is not considered."}
 
 dogMixCol <- colorRampPalette(c("#67A9CF", "black", "#EF8A62"))(100)
 heatmap.2(x=comProp, Rowv=NULL,Colv=NULL, 
@@ -344,7 +344,7 @@ Take another cell in row 2 column 1 from top left: its value (`r cell21`) means 
 
 The average detection limits of tissues as contamination sources are listed in the following table. The values are derived from median values of each column in the heatmap, except for diagonal and missing elements.
 
-```{r table_detect_limit, echo=FALSE}
+```{r table_detect_limit, echo=FALSE, tab.cap="Median lower detection limites of tissues as contamination sources."}
 meanThr <- colMeans(comProp, na.rm=TRUE)
 meanThrShow <- data.frame(Tissue=names(meanThr), MedianDetectionLimit=sprintf("%1.2f%%", meanThr*100))
 kable(meanThrShow, caption="Median lower detection limites of tissues as contamination sources.")
@@ -352,7 +352,7 @@ kable(meanThrShow, caption="Median lower detection limites of tissues as contami
 
 Interestingly, brain samples are a special case: if they contaminate other tissues, it is more difficult to identify (but not other way around). It can be partially explained by the experiment design: Briggs *et al.* profiled the whole cerebrum, whereas in *BioQC* there are `r length(grep("Brain", names(gmt), ignore.case=TRUE))` distinct gene sets assigned to distinct brain regions. Though the prefrontal cortex signature scored highest in the canine brain samples, its score is relative low (7.45), and the genes in the signature are not too far away from the background genes:  
 
-```{r brain_low_exp, echo=FALSE, fig.width=6, fig.height=3, dev='svg', fig.cap="Tissue-specific genes' expression in respective average tissue profiles. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest."}
+```{r brain_low_exp, echo=FALSE, fig.width=6, fig.height=3, dev='svg', fig.cap="**Figure 4:** Average expression of tissue-preferential genes in respective tissues. For each tissue (*e.g.* brain), we calculate the median ratio of gene expression level of specific genes over the median expression level of background genes. The value reflects the specificity of tissue-specific genes in respective tissues. Likely due to the sampling of different brain regions, the score of brain ranks the lowest."}
 dogAvgGs <- c("Brain_Cortex_prefrontal_NR_0.7_3",
               "Muscle_cardiac_NR_0.7_3",
               "Intestine_small_NR_0.7_3",
