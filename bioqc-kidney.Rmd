@@ -5,7 +5,7 @@ output:
     variant: markdown_phpextra
     preserve_yaml: TRUE
 ---
-Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*       ](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Clemens Broger, Martin Ebeling, Martine Burtin, Fabiola Terzi, Silvia Ines Pomposiello, Gregor Sturm and [Laura Badi](laura.badi@roche.com))
+Supplementary Information for "Detect issue heterogenity in gene expression data with [*BioQC*       ](https://github.com/Accio/BioQC)" ([Jitao David Zhang](mailto:jitao_david.zhang@roche.com), Klas Hatje, Gregor Sturm, Clemens Broger, Martin Ebeling, Martine Burtin, Fabiola Terzi, Silvia Ines Pomposiello and [Laura Badi](laura.badi@roche.com))
 
 ```{r setup, include=FALSE}
 options(fig_caption=TRUE)
